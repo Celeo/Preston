@@ -12,7 +12,7 @@ setup(
     version=version,
     license='MIT',
     description='EVE CREST access tool',
-    url='https://git.celeodor.com/Celeo/Prest',
+    url='http://git.celeodor.com/Celeo/Prest',
     platforms='any',
     packages=['prest'],
     install_requires=[
