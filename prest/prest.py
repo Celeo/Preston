@@ -13,12 +13,7 @@ base_uri = 'https://crest-tq.eveonline.com'
 class Prest:
 
     def __init__(self, version=None, **kwargs):
-        self.logger = logging.getLogger('prest')
-        self.logger.setLevel(kwargs.pop('logging_level', logging.ERROR))
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter(style='{', fmt='{asctime} [{levelname}] {message}', datefmt='%Y-%m-%d %H:%M:%S'))
-        handler.setLevel(kwargs.pop('logging_level', logging.ERROR))
-        self.logger.addHandler(handler)
+        self.__configure_logger(**kwargs)
         self.data = None
         self.session = requests.Session()
         self.session.headers.update({
@@ -30,6 +25,14 @@ class Prest:
                 'Version': version
             })
         self()
+
+    def __configure_logger(self, **kwargs):
+        self.logger = logging.getLogger('prest')
+        self.logger.setLevel(kwargs.get('logging_level', logging.ERROR))
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter(style='{', fmt='{asctime} [{levelname}] {message}', datefmt='%Y-%m-%d %H:%M:%S'))
+        handler.setLevel(kwargs.get('logging_level', logging.ERROR))
+        self.logger.addHandler(handler)
 
     @property
     def version(self):
