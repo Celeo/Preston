@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-from prest import Prest, CRESTException
+from prest import Prest
 
 
-try:
-    prest = Prest()
-    print(prest.motd.eve())
-except CRESTException as e:
-    print(e)
+prest = Prest()
+
+print(prest)
+
+print(prest.serverName)
+print(prest.wars)
+print(prest.wars().pageCount)
