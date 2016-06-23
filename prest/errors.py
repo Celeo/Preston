@@ -1,4 +1,5 @@
-__all__ = ['CRESTException', 'InvalidPathException', 'AuthenticationException', 'PathNoLongerSupported']
+__all__ = ['CRESTException', 'InvalidPathException', 'AuthenticationException',
+    'PathNoLongerSupportedException', 'TooManyAttemptsException', 'AuthenticationFailedException']
 
 
 class CRESTException(Exception):
@@ -22,7 +23,20 @@ class AuthenticationException(CRESTException):
         super(AuthenticationException, self).__init__(url)
 
 
-class PathNoLongerSupported(CRESTException):
+class PathNoLongerSupportedException(CRESTException):
 
     def __init__(self, url):
-        super(PathNoLongerSupported, self).__init__(url)
+        super(PathNoLongerSupportedException, self).__init__(url)
+
+
+class TooManyAttemptsException(CRESTException):
+
+    def __init__(self, url):
+        super(TooManyAttemptsException, self).__init__(url)
+
+
+class AuthenticationFailedException(CRESTException):
+
+    def __init__(self, message):
+        super(AuthenticationFailedException, self).__init__('')
+        self.message = message

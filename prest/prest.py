@@ -1,6 +1,7 @@
 import sys
 import logging
 import collections
+import base64
 
 import requests
 
@@ -9,22 +10,31 @@ from prest.errors import *
 
 __all__ = ['Prest', 'APIElement']
 base_uri = 'https://crest-tq.eveonline.com'
+authed_uri = "https://crest-tq.eveonline.com/"
+image_uri = "https://image.eveonline.com/"
+oauth_uri = "https://login.eveonline.com/oauth"
 
 
 class Prest:
 
     def __init__(self, version=None, **kwargs):
+        self._kwargs = kwargs
         self.__configure_logger(kwargs.get('logging_level', logging.WARNING))
         self.data = None
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': kwargs.get('User-Agent', 'Prest v0.0.1'),
-            'Accept': 'application/json'
+            'User-Agent': kwargs.get('User_Agent', 'Prest v0.0.1'),
+            'Accept': 'application/vnd.ccp.eve.Api-v{}+json'.format(kwargs.get('Version', 3)),
         })
         if version:
             self.session.headers.update({
                 'Version': version
             })
+        self.authorize_url = kwargs.get('authorize_url', None)
+        self.callback_url = kwargs.get('callback_url', None)
+        self.client_id = kwargs.get('client_id', None)
+        self.client_secret = kwargs.get('client_secret', None)
+        self.scope = kwargs.get('scope', None)
         self()
 
     def __configure_logger(self, logging_level):
@@ -61,6 +71,43 @@ class Prest:
     def __repr__(self):
         return '<Prest-{}>'.format(self.path)
 
+    def get_authorize_url(self):
+        return '{}?response_type=code&redirect_uri={}&client_id={}&scope={}'.format(self.authorize_url,
+            self.callback_url, self.client_id, self.scope)
+
+    def authenticate(self, code):
+        try:
+            auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('ascii')).decode('utf-8')
+            auth = auth.replace('\n', '').replace(' ', '')
+            auth = 'Basic {}'.format(auth)
+            headers = {
+                'Authorization': auth
+            }
+            data = {
+                'grant_type': 'authorization_code',
+                'code': code.strip()
+            }
+            r = requests.post('https://login.eveonline.com/oauth/token', headers=headers, data=data)
+            if not r.status_code == 200:
+                raise AuthenticationFailedException('HTTP status code was {}'.format(r.status_code))
+            access_token = r.json()['access_token']
+            return AuthPrest(self, access_token)
+        except Exception as e:
+            self.logger.error('Error occurred when authenticating: ' + str(e))
+            raise AuthenticationFailedException(str(e))
+
+
+class AuthPrest(Prest):
+
+    def __init__(self, prest, access_token):
+        super().__init__(prest._kwargs)
+        self.access_token = access_token
+        self.session.headers.update({'Authorization': 'Bearer {}'.format(self.access_token)})
+
+    def whoami(self):
+        # TODO
+        return None
+
 
 class APIElement:
 
@@ -96,7 +143,9 @@ class APIElement:
         if r.status_code == 403:
             raise AuthenticationException(target)
         if r.status_code == 406:
-            raise PathNoLongerSupported(target)
+            raise PathNoLongerSupportedException(target)
+        if r.status_code == 40:
+            raise TooManyAttemptsException(target)
         self.data = r.json()
         self.logger.debug('Element call got HTTP code {}'.format(r.status_code))
         return self
