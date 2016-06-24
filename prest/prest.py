@@ -8,11 +8,10 @@ import requests
 from prest.errors import *
 
 
-__all__ = ['Prest', 'APIElement']
-base_uri = 'https://crest-tq.eveonline.com'
-authed_uri = "https://crest-tq.eveonline.com/"
-image_uri = "https://image.eveonline.com/"
-oauth_uri = "https://login.eveonline.com/oauth"
+__all__ = ['Prest', 'AuthPrest', 'APIElement']
+base_uri = 'https://crest-tq.eveonline.com/'
+image_uri = 'https://image.eveonline.com/'
+oauth_uri = 'https://login.eveonline.com/oauth/'
 
 
 class Prest:
@@ -30,15 +29,14 @@ class Prest:
             self.session.headers.update({
                 'Version': version
             })
-        self.authorize_url = kwargs.get('authorize_url', None)
-        self.callback_url = kwargs.get('callback_url', None)
         self.client_id = kwargs.get('client_id', None)
         self.client_secret = kwargs.get('client_secret', None)
+        self.callback_url = kwargs.get('callback_url', None)
         self.scope = kwargs.get('scope', None)
         self()
 
     def __configure_logger(self, logging_level):
-        self.logger = logging.getLogger('prest')
+        self.logger = logging.getLogger('prest.' + self.__class__.__name__)
         self.logger.setLevel(logging_level)
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter(style='{', fmt='{asctime} [{levelname}] {message}', datefmt='%Y-%m-%d %H:%M:%S'))
@@ -77,7 +75,8 @@ class Prest:
 
     def authenticate(self, code):
         try:
-            auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('ascii')).decode('utf-8')
+            self.logger.debug('Getting access token from auth code')
+            auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('latin-1')).decode('latin-1')
             auth = auth.replace('\n', '').replace(' ', '')
             auth = 'Basic {}'.format(auth)
             headers = {
@@ -85,13 +84,17 @@ class Prest:
             }
             data = {
                 'grant_type': 'authorization_code',
-                'code': code.strip()
+                'code': code
             }
-            r = requests.post('https://login.eveonline.com/oauth/token', headers=headers, data=data)
+            r = self.session.post(oauth_uri + 'token', headers=headers, data=data)
             if not r.status_code == 200:
-                raise AuthenticationFailedException('HTTP status code was {}'.format(r.status_code))
+                self.logger.error('An error occurred with getting the access token')
+                raise AuthenticationFailedException('HTTP status code was {}; response: {}'.format(r.status_code, r.json()))
             access_token = r.json()['access_token']
-            return AuthPrest(self, access_token)
+            self.logger.info('Successfully got the access token')
+            return AuthPrest(access_token, **self._kwargs)
+        except CRESTException as e:
+            raise e
         except Exception as e:
             self.logger.error('Error occurred when authenticating: ' + str(e))
             raise AuthenticationFailedException(str(e))
@@ -99,14 +102,14 @@ class Prest:
 
 class AuthPrest(Prest):
 
-    def __init__(self, prest, access_token):
-        super().__init__(prest._kwargs)
+    def __init__(self, access_token, **kwargs):
+        super().__init__(**kwargs)
         self.access_token = access_token
         self.session.headers.update({'Authorization': 'Bearer {}'.format(self.access_token)})
+        self.logger.debug('AuthPrest init complete')
 
     def whoami(self):
-        # TODO
-        return None
+        return self.session.get(oauth_uri + 'verify').json()
 
 
 class APIElement:

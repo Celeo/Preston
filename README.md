@@ -59,3 +59,25 @@ prest.opportunities.tasks().items.find(name='Jump Through a Wormhole').descripti
 ```python
 prest.systems().items.find(name='Jita')().planets[3].moons[3]().name
 ```
+
+### Authentication
+
+Accessing the authenticated parts of CREST is done through authenticating Prest:
+
+```python
+from prest import *
+
+prest = Prest(client_id='', client_secret='', client_callback='')
+prest.get_authorize_url()
+auth = prest.authenticate(code)
+```
+
+In the code above, `get_authorize_url` returns a URL to redirect a web app client to so they can log into EVE's SSO. Once they've redirected back to your web application, pass the code in the returning URL from EVE to the `authenticate` call and assign the resulting `prest.AuthPrest` object.
+
+This `prest.AuthPrest` object works the same as the unathenticated `prest.Prest` object: use attributes and calls to navigate and load the CREST, respectively.
+
+Example of accessing a character's location:
+
+```python
+print(auth.decode().character().location())
+```
