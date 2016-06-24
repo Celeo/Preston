@@ -9,7 +9,7 @@ Prest is a Python library for accessing EVE Online's CREST API.
 From [pip](https://pip.pypa.io/en/stable/):
 
 ```bash
-pip install git+https://git.celeodor.com/Celeo/Prest.git
+pip install eveprest
 ```
 
 ## Use
