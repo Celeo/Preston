@@ -70,8 +70,8 @@ class Prest:
         return '<Prest-{}>'.format(self.path)
 
     def get_authorize_url(self):
-        return '{}?response_type=code&redirect_uri={}&client_id={}&scope={}'.format(self.authorize_url,
-            self.callback_url, self.client_id, self.scope)
+        return '{}?response_type=code&redirect_uri={}&client_id={}&scope={}'.format(
+            self.authorize_url, self.callback_url, self.client_id, self.scope)
 
     def authenticate(self, code):
         try:

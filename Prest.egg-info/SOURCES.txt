@@ -1,9 +1,0 @@
-setup.py
-Prest.egg-info/PKG-INFO
-Prest.egg-info/SOURCES.txt
-Prest.egg-info/dependency_links.txt
-Prest.egg-info/requires.txt
-Prest.egg-info/top_level.txt
-prest/__init__.py
-prest/errors.py
-prest/prest.py
