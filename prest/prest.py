@@ -17,12 +17,27 @@ oauth_uri = 'https://login.eveonline.com/oauth/'
 
 class Prest:
 
-    def __init__(self, version=None, **kwargs):
+    def __init__(self, **kwargs):
+        """
+        This class is the base for accessing CREST. It contains the base URI's
+        data for building URIs as CREST was deigned to do instead of using hard-
+        coded URIs for accessing endpoints. See README for usage information.
+
+        Optional values from kwargs:
+            Version (str) - version of CREST to request
+            loggin_level (int) - logging level to set
+
+        Args:
+            kwargs - optional parameters for configuration
+
+        Returns:
+            None
+        """
         self._kwargs = kwargs
-        self.__configure_logger(kwargs.get('logging_level', logging.WARNING))
+        self.__configure_logger(kwargs.get('logging_level', logging.ERROR))
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': kwargs.get('User_Agent', 'Prest v0.0.1'),
+            'User-Agent': kwargs.get('User_Agent', 'Prest v'), # TODO version
             'Accept': 'application/vnd.ccp.eve.Api-v{}+json'.format(kwargs.get('Version', 3)),
         })
         if version:
@@ -37,6 +52,15 @@ class Prest:
         self()
 
     def __configure_logger(self, logging_level):
+        """
+        Configure the internal debugging logger.
+
+        Args:
+            logging_level (int) - logging level to set
+
+        Returns:
+            None
+        """
         self.logger = logging.getLogger('prest.' + self.__class__.__name__)
         self.logger.setLevel(logging_level)
         handler = logging.StreamHandler(sys.stdout)
@@ -46,15 +70,46 @@ class Prest:
 
     @property
     def version(self):
+        """
+        Return the version of CREST being requested.
+
+        Args:
+            None
+
+        Returns:
+            value (int) of the CREST version being requested
+        """
         return self.session.headers.get('Version')
 
     @version.setter
     def version(self, value):
+        """
+        Sets the version of CREST to request.
+
+        Args:
+            value (str) - version to request
+
+        Returns:
+            None
+        """
         self.session.headers.update({
             'Version': version
         })
 
     def __getattr__(self, target):
+        """
+        Get an element from the current page.
+
+        Args:
+            target (str) - dictionary element to retrieve
+
+        Returns:
+            If the element requested is a dict with a herf key, a
+                new APIElement object is returned that points to that URI.
+            If the element requested is a dict or list, a new APIElement
+                is returned with that subset of the page's data.
+            If neither of the above is true, then the data is returned as-is.
+        """
         if not self.cache.check(base_uri):
             self()
         self.logger.debug('Root getattr to "{}"'.format(target))
@@ -66,6 +121,15 @@ class Prest:
         return subset
 
     def __call__(self):
+        """
+        Re-request the base URI from CREST and store it in the cache.
+
+        Args:
+            None
+
+        Returns:
+            self
+        """
         self.logger.info('Root call')
         r = self.session.get(base_uri)
         if r.status_code == 404:
@@ -80,16 +144,53 @@ class Prest:
         return self
 
     def __str__(self):
+        """
+        Returns the contents of the page from the cache.
+
+        Args:
+            None
+
+        Returns:
+            value (str) of the page contents
+        """
         return str(self.cache.get(base_uri))
 
     def __repr__(self):
+        """
+        Returns the class name.
+
+        Args:
+            None
+
+        Returns:
+            value (str)
+        """
         return '<Prest>'
 
     def get_authorize_url(self):
+        """
+        Returns the URI to direct web clients to in order to authenticate against
+        EVE's SSO endpoint.
+
+        Args:
+            None
+
+        Returns:
+            value (str) of the URI to redirect to
+        """
         return '{}?response_type=code&redirect_uri={}&client_id={}&scope={}'.format(
             self.authorize_url, self.callback_url, self.client_id, self.scope)
 
     def authenticate(self, code):
+        """
+        Authenticates with CREST with the passed code from the SSO.
+
+        Args:
+            code (str) - code from the SSO login
+
+        Returns:
+            value (prest.AuthPrest) of the new CREST connection
+        """
         try:
             self.logger.debug('Getting access token from auth code')
             auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('latin-1')).decode('latin-1')
@@ -119,6 +220,18 @@ class Prest:
 class AuthPrest(Prest):
 
     def __init__(self, access_token, cache, **kwargs):
+        """
+        This class is a subclass of `prest.Prest` and modifies the session
+        headers to allow for authenticated calls to CREST.
+
+        Args:
+            access_token (str) - authentication token from EVE's OAuth
+            cache (prest.Cache) - cache from the `prest.Prest` superclass
+            kwargs - passed to `prest.Prest`'s __init__
+
+        Returns:
+            None
+        """
         super().__init__(**kwargs)
         self.access_token = access_token
         self.cache = cache
@@ -126,15 +239,45 @@ class AuthPrest(Prest):
         self.logger.info('AuthPrest init complete')
 
     def whoami(self):
+        """
+        Returns the character(s) the authentication covers.
+
+        Args:
+            None
+
+        Returns:
+            value (str) of the authenticated name(s)
+        """
         return self.session.get(oauth_uri + 'verify').json()
 
     def __repr__(self):
+        """
+        Returns the class name.
+
+        Args:
+            None
+
+        Returns:
+            value (str)
+        """
         return '<AuthPrest>'
 
 
 class APIElement:
 
     def __init__(self, uri, data, prest):
+        """
+        This class expands on the __getattr__ and __call__ functionality
+        of `prest.Prest` in order to navigate through CREST.
+
+        Args:
+            uri (str) - URI being targeted
+            data (dict) - data subset from the previous __getattr__ call
+            prest (prest.Prest) - super Prest instance
+
+        Returns:
+            None
+        """
         self.uri = uri
         self.data = data
         self._prest = prest
@@ -150,6 +293,17 @@ class APIElement:
                 self()
 
     def __getattr__(self, target):
+        """
+        Get an element from the current page.
+
+        Args:
+            target (str) - dictionary element to retrieve
+
+        Returns:
+            If the element requested is a dict or list, a new APIElement
+                is returned with that subset of the page's data.
+            If neither of the above is true, then the data is returned as-is.
+        """
         self.logger.debug('Element getattr to "{}"'.format(target))
         if self.data:
             subset = self.data[target]
@@ -158,6 +312,17 @@ class APIElement:
             return subset
 
     def __getitem__(self, index):
+        """
+        Get an element from the current page.
+
+        Args:
+            index (int) - list index to retrieve
+
+        Returns:
+            If the element requested is a dict or list, a new APIElement
+                is returned with that subset of the page's data.
+            If neither of the above is true, then the data is returned as-is.
+        """
         self.logger.debug('Element getitem to "{}"'.format(index))
         if self.data:
             subset = self.data[index]
@@ -165,7 +330,16 @@ class APIElement:
                 return APIElement(self.uri, subset, self._prest)
             return subset
 
-    def __call__(self, **kwargs):
+    def __call__(self):
+        """
+        Request the current URI from CREST and store it in the cache.
+
+        Args:
+            None
+
+        Returns:
+            self
+        """
         self.logger.debug('Element call, uri = "{}", has data: {}'.format(self.uri, bool(self.data)))
         if self.data:
             if self.data.get('href'):
@@ -191,9 +365,33 @@ class APIElement:
         return self
 
     def __len__(self):
+        """
+        Returns the number of items in the stored data.
+
+        More of a debugging tool, since getting the number of dictionary keys
+        isn't a good indicator of how much data is actually here.
+
+        Args:
+            None
+
+        Returns:
+            value (int) of the number of keys in the data
+        """
         return len(self.data)
 
     def find(self, **kwargs):
+        """
+        A helper method for navigating lists of dicts on the page.
+
+        The kwargs parameter is used to pass requirements for matching the nested
+        dictionary keys. All key-values must match.
+
+        Args:
+            kwargs - matching requirements
+
+        Returns:
+            An APIElement matching the filter or None if nothing matched
+        """
         if not isinstance(self.data, collections.Iterable):
             raise CRESTException('Can not iterate on an ' + str(type(self.data)))
         for element in self.data:
@@ -204,7 +402,25 @@ class APIElement:
         return None
 
     def __repr__(self):
+        """
+        Returns the class name.
+
+        Args:
+            None
+
+        Returns:
+            value (str)
+        """
         return '<APIElement-{}>'.format(self.uri)
 
     def __str__(self):
+        """
+        Returns the contents of the page from the cache.
+
+        Args:
+            None
+
+        Returns:
+            value (str) of the page contents
+        """
         return str(self.data)
