@@ -5,3 +5,5 @@ build
 EVEPrest.egg-info
 Prest.egg-info
 dist
+.cache/
+.coverage

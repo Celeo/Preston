@@ -83,7 +83,7 @@ class Prest:
         return str(self.cache.get(base_uri))
 
     def __repr__(self):
-        return '<Prest-{}>'.format(self.path)
+        return '<Prest>'
 
     def get_authorize_url(self):
         return '{}?response_type=code&redirect_uri={}&client_id={}&scope={}'.format(
@@ -129,7 +129,7 @@ class AuthPrest(Prest):
         return self.session.get(oauth_uri + 'verify').json()
 
     def __repr__(self):
-        return '<AuthPrest-{}'.format(self.path)
+        return '<AuthPrest>'
 
 
 class APIElement:

@@ -22,7 +22,7 @@ class Cache:
     def _get_expiration(self, headers):
         if headers.get('Cache-Control') in ('no-cache', 'no-store'):
             return 0
-        match = re.search(r'max-age=([0-9]+)', headers.get('Cache-Control'))
+        match = re.search(r'max-age=([0-9]+)', headers.get('Cache-Control', ''))
         if match:
             return int(match.group(1))
         return 0
@@ -37,8 +37,6 @@ class Cache:
                 uri, time.time(), data.expires_after))
             del self.data[uri]
             data = None
-        else:
-            self.logger.info('Returning cached page at uri {}'.format(uri))
         return data
 
     def get(self, uri, ignore_expires=False):
@@ -54,11 +52,7 @@ class Cache:
         uri = self._proper_uri(uri)
         data = self.data.get(uri)
         if data:
-            if data.expires_after < time.time():
-                self.logger.warning('Cached page at uri {} expired. Now: {}, expired after: {}'.format(
-                    uri, time.time(), data.expires_after))
-                del self.data[uri]
-                data = None
+            data = self._check_expiration(uri, data)
         return bool(data)
 
     def __len__(self):
