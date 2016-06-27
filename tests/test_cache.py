@@ -26,8 +26,8 @@ def test_proper_uri(prest):
     Test the URI formatting method.
     """
     assert(prest.cache._proper_uri('') == base_uri)
-    assert(prest.cache._proper_uri('wars') == base_uri + 'wars')
-    assert(prest.cache._proper_uri(base_uri + 'wars') == base_uri + 'wars')
+    assert(prest.cache._proper_uri('wars') == base_uri + 'wars/')
+    assert(prest.cache._proper_uri(base_uri + 'wars') == base_uri + 'wars/')
 
 
 def test_expiration(prest):

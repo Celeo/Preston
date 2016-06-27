@@ -24,7 +24,6 @@ class Prest:
         coded URIs for accessing endpoints. See README for usage information.
 
         Optional values from kwargs:
-            Version (str) - version of CREST to request
             loggin_level (int) - logging level to set
 
         Args:
@@ -40,10 +39,6 @@ class Prest:
             'User-Agent': kwargs.get('User_Agent', 'Prest v'), # TODO version
             'Accept': 'application/vnd.ccp.eve.Api-v{}+json'.format(kwargs.get('Version', 3)),
         })
-        if version:
-            self.session.headers.update({
-                'Version': version
-            })
         self.client_id = kwargs.get('client_id', None)
         self.client_secret = kwargs.get('client_secret', None)
         self.callback_url = kwargs.get('callback_url', None)

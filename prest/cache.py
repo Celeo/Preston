@@ -38,7 +38,7 @@ class Cache:
         """
         if self.base_uri not in uri:
             uri = self.base_uri + uri
-        uri = re.sub(r'//', '/')
+        uri = re.sub(r'(?<!https:)//', '/', uri)
         if not uri.endswith('/'):
             uri = uri + '/'
         return uri
