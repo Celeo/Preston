@@ -99,7 +99,7 @@ prest.get_authorize_url()
 auth = prest.authenticate(code)
 ```
 
-In the code above, `get_authorize_url` returns a URL to redirect a web app client to so they can log into EVE's SSO. Once they've redirected back to your web application, pass the code in the returning URL from EVE to the `authenticate` call and assign the resulting `prest.AuthPrest` object. You don't need to set the client information in Prest if you're not planning on using it to generate a URI to redirect users to - Prest only needs the code back from EVE's SSO to make authenticated calls.
+In the code above, `get_authorize_url` returns a URL to redirect a web app client to so they can log into EVE's SSO. Once they've redirected back to your web application, pass the code in the returning URL from EVE to the `authenticate` call and assign the resulting `prest.AuthPrest` object.
 
 This `prest.AuthPrest` object works the same as the unathenticated `prest.Prest` object: use attributes and calls to navigate and load CREST data, respectively.
 
