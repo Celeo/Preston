@@ -204,7 +204,7 @@ class Prest:
                 raise AuthenticationFailedException('HTTP status code was {}; response: {}'.format(r.status_code, r.json()))
             access_token = r.json()['access_token']
             self.logger.info('Successfully got the access token')
-            return AuthPrest(access_token, self.cache, self._kwargs)
+            return AuthPrest(access_token, self.cache, **self._kwargs)
         except CRESTException as e:
             raise e
         except Exception as e:
