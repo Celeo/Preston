@@ -9,10 +9,13 @@ from prest.errors import *
 from prest.cache import *
 
 
-__all__ = ['Prest', 'AuthPrest', 'APIElement']
+__version__ = '1.2.3'
+
 base_uri = 'https://crest-tq.eveonline.com/'
 image_uri = 'https://image.eveonline.com/'
 oauth_uri = 'https://login.eveonline.com/oauth/'
+
+__all__ = ['Prest', 'AuthPrest', 'APIElement']
 
 
 class Prest:
@@ -36,7 +39,7 @@ class Prest:
         self.__configure_logger(kwargs.get('logging_level', logging.ERROR))
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': kwargs.get('User_Agent', 'Prest v'), # TODO version
+            'User-Agent': kwargs.get('User_Agent', 'Prest v' + __version__),
             'Accept': 'application/vnd.ccp.eve.Api-v{}+json'.format(kwargs.get('Version', 3)),
         })
         self.client_id = kwargs.get('client_id', None)

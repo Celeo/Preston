@@ -2,7 +2,7 @@ from setuptools import setup
 import re
 
 
-with open('prest/__init__.py') as f:
+with open('prest/prest.py') as f:
     version = re.search(r'(\d+\.\d+\.\d+)', f.read()).group(1)
 
 setup(
