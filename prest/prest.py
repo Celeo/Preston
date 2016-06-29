@@ -9,7 +9,7 @@ from prest.errors import *
 from prest.cache import *
 
 
-__version__ = '1.2.3'
+__version__ = '1.2.6'
 
 base_uri = 'https://crest-tq.eveonline.com/'
 image_uri = 'https://image.eveonline.com/'
