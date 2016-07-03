@@ -1,5 +1,7 @@
 coverage==4.1
+pandoc==1.0.0b2
 pep8==1.7.0
+ply==3.8
 py==1.4.31
 pytest==2.9.2
 pytest-cov==2.2.1
