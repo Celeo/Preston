@@ -10,7 +10,7 @@ from prest.errors import *
 from prest.cache import *
 
 
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 base_url = 'https://crest-tq.eveonline.com/'
 image_url = 'https://image.eveonline.com/'
