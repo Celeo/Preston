@@ -40,3 +40,10 @@ class AuthenticationFailedException(CRESTException):
     def __init__(self, message):
         super(AuthenticationFailedException, self).__init__('')
         self.message = message
+
+
+class AccessTokenExpiredException(CRESTException):
+
+    def __init__(self, message):
+        super(AccessTokenExpiredException, self).__init__('')
+        self.message = 'The access token has expired and no refresh token is present'

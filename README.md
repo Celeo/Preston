@@ -25,7 +25,7 @@ prest = Prest()
 ### Attributes and calls
 
 * Calling
-  * on `prest.Prest`: reload the base URI data
+  * on `prest.Prest`: reload the base URL data
     * `prest()` -> the same `prest.Prest`
   * on `prest.APIElement`: navigate to a new page
     * `prest.foo()` -> `prest.APIElement`
@@ -71,7 +71,7 @@ prest.systems().items.find(name='Jita')().planets[3].moons[3]().name
 
 ### Using the cache
 
-When you make a call to `prest.foo`, the root CREST URI data stored locally will be checked for an expired cache timer (the root URI's data is loaded when instantiating a new `prest.Prest` object, you don't need to do it manually). If it's expired, the root URI will be gotten anew and cached. This is similar for `prest.foo().bar().baz()` - if all of `foo`, `bar`, and `baz` were dictionaries with `'href'` keys that pointed to new pages, each would use the cache to retrieve the page, only making a new request to CREST if the local copy of the page is either non-existent or expired.
+When you make a call to `prest.foo`, the root CREST URL data stored locally will be checked for an expired cache timer (the root URL's data is loaded when instantiating a new `prest.Prest` object, you don't need to do it manually). If it's expired, the root URL will be gotten anew and cached. This is similar for `prest.foo().bar().baz()` - if all of `foo`, `bar`, and `baz` were dictionaries with `'href'` keys that pointed to new pages, each would use the cache to retrieve the page, only making a new request to CREST if the local copy of the page is either non-existent or expired.
 
 However, when getting attributes from a page, like `prest.foo().bar.baz`, neither `bar` or `baz` on the page will be using the cache. Thus, in order to make the same call multiple times over a period of time and using the cache, either make the full `prest.foo().bar.baz` call again, or save the last-called element as a local variable and call that:
 
@@ -107,4 +107,17 @@ Example of accessing a character's location:
 
 ```python
 print(auth.decode().character().location())
+```
+
+#### Refresh tokens
+
+When you authenticate for accessing CREST using a scope, Prest will get two tokens back: the access token, which is a temporary (20 minutes) token used for accessing CREST, and a refresh token that doesn't expire but cannot be used to directly access CREST. When the access token expires, Prest will get another access token from CREST using the refresh token.
+
+Since the refresh token doesn't expire, you'll want to keep that somewhere safe. Prest doesn't handle this for you.
+
+To start an authenticated session with Prest using a previously-fetched refresh token (you can get the existing refresh token with `prest.AuthPrest.refresh_token` as a `str`), do the following:
+
+```python
+prest = Prest(client_id='', client_secret='', client_callback='')
+auth = prest.use_refresh_token('previous-refresh-token')
 ```

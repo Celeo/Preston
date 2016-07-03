@@ -2,6 +2,7 @@ import sys
 import logging
 import collections
 import base64
+import time
 
 import requests
 
@@ -9,11 +10,12 @@ from prest.errors import *
 from prest.cache import *
 
 
-__version__ = '1.2.6'
+__version__ = '1.3.0'
 
-base_uri = 'https://crest-tq.eveonline.com/'
-image_uri = 'https://image.eveonline.com/'
-oauth_uri = 'https://login.eveonline.com/oauth/'
+base_url = 'https://crest-tq.eveonline.com/'
+image_url = 'https://image.eveonline.com/'
+oauth_url = 'https://login.eveonline.com/oauth/'
+token_url = 'https://login.eveonline.com/oauth/token'
 
 __all__ = ['Prest', 'AuthPrest', 'APIElement']
 
@@ -22,12 +24,16 @@ class Prest:
 
     def __init__(self, **kwargs):
         """
-        This class is the base for accessing CREST. It contains the base URI's
-        data for building URIs as CREST was deigned to do instead of using hard-
-        coded URIs for accessing endpoints. See README for usage information.
+        This class is the base for accessing CREST. It contains the base url's
+        data for building urls as CREST was deigned to do instead of using hard-
+        coded urls for accessing endpoints. See README for usage information.
 
         Optional values from kwargs:
             loggin_level (int) - logging level to set
+            client_id (str) - authenticated CREST app client id
+            client_secret (str) - authenticated CREST app client secret
+            callback_url (str) - authenticated CREST app callback URL
+            scope (str) - authenticated CREST app scope
 
         Args:
             kwargs - optional parameters for configuration
@@ -46,7 +52,7 @@ class Prest:
         self.client_secret = kwargs.get('client_secret', None)
         self.callback_url = kwargs.get('callback_url', None)
         self.scope = kwargs.get('scope', None)
-        self.cache = Cache(self, base_uri)
+        self.cache = Cache(self, base_url)
         self()
 
     def __configure_logger(self, logging_level):
@@ -103,24 +109,24 @@ class Prest:
 
         Returns:
             If the element requested is a dict with a herf key, a
-                new APIElement object is returned that points to that URI.
+                new APIElement object is returned that points to that url.
             If the element requested is a dict or list, a new APIElement
                 is returned with that subset of the page's data.
             If neither of the above is true, then the data is returned as-is.
         """
-        if not self.cache.check(base_uri):
+        if not self.cache.check(base_url):
             self()
         self.logger.debug('Root getattr to "{}"'.format(target))
-        subset = self.cache.get(base_uri)[target]
+        subset = self.cache.get(base_url)[target]
         if type(subset) == dict and subset.get('href'):
             return APIElement(subset['href'], None, self)
         if type(subset) in (dict, list):
-            return APIElement(base_uri, subset, self)
+            return APIElement(base_url, subset, self)
         return subset
 
     def __call__(self):
         """
-        Re-request the base URI from CREST and store it in the cache.
+        Re-request the base url from CREST and store it in the cache.
 
         Args:
             None
@@ -129,15 +135,15 @@ class Prest:
             self
         """
         self.logger.info('Root call')
-        r = self.session.get(base_uri)
+        r = self.session.get(base_url)
         if r.status_code == 404:
-            raise InvalidPathException(base_uri)
+            raise InvalidPathException(base_url)
         if r.status_code == 403:
-            raise AuthenticationException(base_uri)
+            raise AuthenticationException(base_url)
         if r.status_code == 406:
-            raise PathNoLongerSupportedException(base_uri)
+            raise PathNoLongerSupportedException(base_url)
         if r.status_code == 40:
-            raise TooManyAttemptsException(base_uri)
+            raise TooManyAttemptsException(base_url)
         self.cache.set(r)
         return self
 
@@ -151,7 +157,7 @@ class Prest:
         Returns:
             value (str) of the page contents
         """
-        return str(self.cache.get(base_uri))
+        return str(self.cache.get(base_url))
 
     def __repr__(self):
         """
@@ -167,17 +173,36 @@ class Prest:
 
     def get_authorize_url(self):
         """
-        Returns the URI to direct web clients to in order to authenticate against
+        Returns the url to direct web clients to in order to authenticate against
         EVE's SSO endpoint.
 
         Args:
             None
 
         Returns:
-            value (str) of the URI to redirect to
+            value (str) of the url to redirect to
         """
-        return '{}?response_type=code&redirect_uri={}&client_id={}&scope={}'.format(
+        return '{}?response_type=code&redirect_url={}&client_id={}&scope={}'.format(
             self.authorize_url, self.callback_url, self.client_id, self.scope)
+
+    def _build_auth_headers(self):
+        """
+        Build a dictionary of the authentication required for
+        accessing OAuth endpoints.
+
+        Args:
+            None
+
+        Returns:
+            value (dict) with the 'Authorization' key and value
+        """
+        auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('latin-1')).decode('latin-1')
+        auth = auth.replace('\n', '').replace(' ', '')
+        auth = 'Basic {}'.format(auth)
+        headers = {
+            'Authorization': auth
+        }
+        return headers
 
     def authenticate(self, code):
         """
@@ -191,17 +216,12 @@ class Prest:
         """
         try:
             self.logger.debug('Getting access token from auth code')
-            auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('latin-1')).decode('latin-1')
-            auth = auth.replace('\n', '').replace(' ', '')
-            auth = 'Basic {}'.format(auth)
-            headers = {
-                'Authorization': auth
-            }
+            headers = self._build_auth_headers()
             data = {
                 'grant_type': 'authorization_code',
                 'code': code
             }
-            r = self.session.post(oauth_uri + 'token', headers=headers, data=data)
+            r = self.session.post(oauth_url + 'token', headers=headers, data=data)
             if not r.status_code == 200:
                 self.logger.error('An error occurred with getting the access token')
                 raise AuthenticationFailedException('HTTP status code was {}; response: {}'.format(r.status_code, r.json()))
@@ -214,10 +234,42 @@ class Prest:
             self.logger.error('Error occurred when authenticating: ' + str(e))
             raise AuthenticationFailedException(str(e))
 
+    def use_refresh_token(self, refresh_token):
+        """
+        Authenticates with CREST using a refresh token previously
+        gotten from CREST.
+
+        Args:
+            refresh_token (str) - refresh token from CREST
+
+        Returns:
+            new authenticated (prest.AuthPrest) connection
+        """
+        access_token, access_expiration = self._refresh_to_access(refresh_token)
+        return AuthPrest(access_token, access_expiration, self.cache, refresh_token=refresh_token, **self._kwargs)
+
+    def _refresh_to_access(self, refresh_token):
+        """
+        Get an access token from a refresh token.
+
+        Args:
+            refresh_token (str) - CREST refresh token
+
+        Returns:
+            access token (str) from CREST
+        """
+        headers = self._build_auth_headers()
+        data = {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token
+        }
+        r = self.session.post(token_url, headers=headers, data=data)
+        return r.json()['access_token'], r.json()['expires_in']
+
 
 class AuthPrest(Prest):
 
-    def __init__(self, access_token, cache, **kwargs):
+    def __init__(self, access_token, access_expiration, cache, **kwargs):
         """
         This class is a subclass of `prest.Prest` and modifies the session
         headers to allow for authenticated calls to CREST.
@@ -230,9 +282,11 @@ class AuthPrest(Prest):
         Returns:
             None
         """
-        super().__init__(**kwargs)
         self.access_token = access_token
+        self.access_expiration = time.time() + access_expiration
+        super().__init__(**kwargs)
         self.cache = cache
+        self.refresh_token = kwargs.get('refresh_token', None)
         self.session.headers.update({'Authorization': 'Bearer {}'.format(self.access_token)})
         self.logger.info('AuthPrest init complete')
 
@@ -246,7 +300,7 @@ class AuthPrest(Prest):
         Returns:
             value (str) of the authenticated name(s)
         """
-        return self.session.get(oauth_uri + 'verify').json()
+        return self.session.get(oauth_url + 'verify').json()
 
     def __repr__(self):
         """
@@ -260,33 +314,70 @@ class AuthPrest(Prest):
         """
         return '<AuthPrest>'
 
+    def _get_new_access_token(self):
+        """
+        Gets a new access token from CREST using the stored refresh token.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        if not self.refresh_token:
+            raise AccessTokenExpiredException()
+        self.access_token, self.access_expiration = self._refresh_to_access(self.refresh_token)
+        self.access_expiration = time.time() + self.access_expiration
+
+    def __getattr__(self, target):
+        """
+        Supplements the prest.Prest call to `__getattr__` with
+        a check for the expiration of the access token. If the
+        access token is expired, an attempt is made to generate
+        a new one from the resfresh_token.
+        """
+        if time.time() > self.access_expiration:
+            self._get_new_access_token()
+        return super().__getattr__(target)
+
+    def __call__(self):
+        """
+        Supplements the prest.Prest call to `__call__` with
+        a check for the expiration of the access token. If the
+        access token is expired, an attempt is made to generate
+        a new one from the resfresh_token.
+        """
+        if time.time() > self.access_expiration:
+            self._get_new_access_token()
+        return super().__call__()
+
 
 class APIElement:
 
-    def __init__(self, uri, data, prest):
+    def __init__(self, url, data, prest):
         """
         This class expands on the __getattr__ and __call__ functionality
         of `prest.Prest` in order to navigate through CREST.
 
         Args:
-            uri (str) - URI being targeted
+            url (str) - url being targeted
             data (dict) - data subset from the previous __getattr__ call
             prest (prest.Prest) - super Prest instance
 
         Returns:
             None
         """
-        self.uri = uri
+        self.url = url
         self.data = data
         self._prest = prest
         self.session = prest.session
         self.logger = prest.logger
         self.cache = prest.cache
         self.cache.fetch = self.__call__
-        self.logger.info('APIElement init: uri = "{}"'.format(uri))
+        self.logger.info('APIElement init: url = "{}"'.format(url))
         if not self.data:
-            if self.cache.check(uri):
-                self.data = self.cache.get(uri, ignore_expires=True)
+            if self.cache.check(url):
+                self.data = self.cache.get(url, ignore_expires=True)
             else:
                 self()
 
@@ -306,7 +397,7 @@ class APIElement:
         if self.data:
             subset = self.data[target]
             if type(subset) in (dict, list):
-                return APIElement(self.uri, subset, self._prest)
+                return APIElement(self.url, subset, self._prest)
             return subset
 
     def __getitem__(self, index):
@@ -325,12 +416,12 @@ class APIElement:
         if self.data:
             subset = self.data[index]
             if type(self.data[index]) in (dict, list):
-                return APIElement(self.uri, subset, self._prest)
+                return APIElement(self.url, subset, self._prest)
             return subset
 
     def __call__(self):
         """
-        Request the current URI from CREST and store it in the cache.
+        Request the current url from CREST and store it in the cache.
 
         Args:
             None
@@ -338,25 +429,25 @@ class APIElement:
         Returns:
             self
         """
-        self.logger.debug('Element call, uri = "{}", has data: {}'.format(self.uri, bool(self.data)))
+        self.logger.debug('Element call, url = "{}", has data: {}'.format(self.url, bool(self.data)))
         if self.data:
             if self.data.get('href'):
                 return APIElement(self.data['href'], None, self._prest)
-            return APIElement(self.uri, self.data, self._prest)
-        if self.cache.check(self.uri):
+            return APIElement(self.url, self.data, self._prest)
+        if self.cache.check(self.url):
             if not self.data:
-                self.data = self.cache.get(self.uri, ignore_expires=True)
+                self.data = self.cache.get(self.url, ignore_expires=True)
             return self
-        self.logger.info('Making CREST request to: ' + self.uri)
-        r = self.session.get(self.uri)
+        self.logger.info('Making CREST request to: ' + self.url)
+        r = self.session.get(self.url)
         if r.status_code == 404:
-            raise InvalidPathException(self.uri)
+            raise InvalidPathException(self.url)
         if r.status_code == 403:
-            raise AuthenticationException(self.uri)
+            raise AuthenticationException(self.url)
         if r.status_code == 406:
-            raise PathNoLongerSupportedException(self.uri)
+            raise PathNoLongerSupportedException(self.url)
         if r.status_code == 40:
-            raise TooManyAttemptsException(self.uri)
+            raise TooManyAttemptsException(self.url)
         self.logger.debug('Element call got HTTP code {}'.format(r.status_code))
         self.cache.set(r)
         self.data = r.json()
@@ -395,7 +486,7 @@ class APIElement:
         for element in self.data:
             if all(element[key] == value for key, value in kwargs.items()):
                 if type(element) in (dict, list):
-                    return APIElement(self.uri, element, self._prest)
+                    return APIElement(self.url, element, self._prest)
                 return element
         return None
 
@@ -409,7 +500,7 @@ class APIElement:
         Returns:
             value (str)
         """
-        return '<APIElement-{}>'.format(self.uri)
+        return '<APIElement-{}>'.format(self.url)
 
     def __str__(self):
         """

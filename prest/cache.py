@@ -7,14 +7,14 @@ __all__ = ['Cache']
 
 class Cache:
 
-    def __init__(self, prest, base_uri):
+    def __init__(self, prest, base_url):
         """
         The cache is desgined to respect the caching rules of CREST as to
         not request a page more often than it is updated by the server.
 
         Args:
             prest (prest.Prest): the containing Prest instance
-            base_uri (str): the root URI of CREST
+            base_url (str): the root url of CREST
 
         Returns:
             None
@@ -23,25 +23,25 @@ class Cache:
         self._prest = prest
         self.logger = prest.logger
         self.fetch = prest.__call__
-        self.base_uri = base_uri
+        self.base_url = base_url
 
-    def _proper_uri(self, uri):
+    def _proper_url(self, url):
         """
-        Covert a potentially simple string ('war') to the full URI of
+        Covert a potentially simple string ('war') to the full url of
         the CREST endpoint ('https://crest-tq.eveonline.com/wars/').
 
         Args:
-            uri (str) - URI or URI fragment to modify
+            url (str) - url or url fragment to modify
 
         Returns:
-            value (str) of the proper URI
+            value (str) of the proper url
         """
-        if self.base_uri not in uri:
-            uri = self.base_uri + uri
-        uri = re.sub(r'(?<!https:)//', '/', uri)
-        if not uri.endswith('/'):
-            uri = uri + '/'
-        return uri
+        if self.base_url not in url:
+            url = self.base_url + url
+        url = re.sub(r'(?<!https:)//', '/', url)
+        if not url.endswith('/'):
+            url = url + '/'
+        return url
 
     def _get_expiration(self, headers):
         """
@@ -73,61 +73,61 @@ class Cache:
         self.data[response.url] = Page(response.json(), self._get_expiration(response.headers))
         self.logger.info('Added cache for url {}, expires in {} seconds'.format(response.url, self.data[response.url].expires_in))
 
-    def _check_expiration(self, uri, data):
+    def _check_expiration(self, url, data):
         """
-        Checks the expiration time for data for a URI. If the data has expired, it
+        Checks the expiration time for data for a url. If the data has expired, it
         is deleted from the cache.
 
         Args:
-            uri (str) - URI to check
-            data (prest.cache.Page) - page of data for that URI
+            url (str) - url to check
+            data (prest.cache.Page) - page of data for that url
 
         Returns:
             value (any) of either the passed data or None if it expired
         """
         if data.expires_after < time.time():
-            self.logger.warning('Cached page at uri {} expired. Now: {}, expired after: {}'.format(
-                uri, time.time(), data.expires_after))
-            del self.data[uri]
+            self.logger.warning('Cached page at url {} expired. Now: {}, expired after: {}'.format(
+                url, time.time(), data.expires_after))
+            del self.data[url]
             data = None
         return data
 
-    def get(self, uri, ignore_expires=False):
+    def get(self, url, ignore_expires=False):
         """
-        Get data from the cache by the URI. If the data has expired, the callback
+        Get data from the cache by the url. If the data has expired, the callback
         function is called to get the data again.
 
         Args:
-            uri (str) - URI to get data for
+            url (str) - url to get data for
             ignore_expires (bool [False]) - whether to ignore the expiration date
                 in returning data to the caller
 
         Returns:
             value (any) of either the passed data or None if it expired
         """
-        uri = self._proper_uri(uri)
-        data = self.data.get(uri)
+        url = self._proper_url(url)
+        data = self.data.get(url)
         if not data:
             return self.fetch()
         if ignore_expires:
-            self._check_expiration(uri, data)
+            self._check_expiration(url, data)
         return data.data if data else None
 
-    def check(self, uri):
+    def check(self, url):
         """
-        Check if data for a URI has expired. Data is not fetched again
+        Check if data for a url has expired. Data is not fetched again
         if it has expired.
 
         Args:
-            uri (str) - URI to check expiration on
+            url (str) - url to check expiration on
 
         Returns:
             value (bool) that's True if the data has expired
         """
-        uri = self._proper_uri(uri)
-        data = self.data.get(uri)
+        url = self._proper_url(url)
+        data = self.data.get(url)
         if data:
-            data = self._check_expiration(uri, data)
+            data = self._check_expiration(url, data)
         return bool(data)
 
     def __len__(self):
