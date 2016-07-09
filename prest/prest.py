@@ -10,12 +10,13 @@ from prest.errors import *
 from prest.cache import *
 
 
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 base_url = 'https://crest-tq.eveonline.com/'
 image_url = 'https://image.eveonline.com/'
 oauth_url = 'https://login.eveonline.com/oauth/'
 token_url = 'https://login.eveonline.com/oauth/token'
+authorize_url = 'https://login.eveonline.com/oauth/authorize'
 
 __all__ = ['Prest', 'AuthPrest', 'APIElement']
 
@@ -183,7 +184,7 @@ class Prest:
             value (str) of the url to redirect to
         """
         return '{}?response_type=code&redirect_url={}&client_id={}&scope={}'.format(
-            self.authorize_url, self.callback_url, self.client_id, self.scope)
+            authorize_url, self.callback_url, self.client_id, self.scope)
 
     def _build_auth_headers(self):
         """
