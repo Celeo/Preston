@@ -10,7 +10,7 @@ from prest.errors import *
 from prest.cache import *
 
 
-__version__ = '1.3.3'
+__version__ = '1.3.5'
 
 base_url = 'https://crest-tq.eveonline.com/'
 image_url = 'https://image.eveonline.com/'
@@ -52,7 +52,7 @@ class Prest:
         self.client_id = kwargs.get('client_id', None)
         self.client_secret = kwargs.get('client_secret', None)
         self.callback_url = kwargs.get('callback_url', None)
-        self.scope = kwargs.get('scope', None)
+        self.scope = kwargs.get('scope', '')
         self.cache = Cache(self, base_url)
         self()
 
@@ -227,8 +227,9 @@ class Prest:
                 self.logger.error('An error occurred with getting the access token')
                 raise AuthenticationFailedException('HTTP status code was {}; response: {}'.format(r.status_code, r.json()))
             access_token = r.json()['access_token']
+            access_expiration = r.json()['expires_in']
             self.logger.info('Successfully got the access token')
-            return AuthPrest(access_token, self.cache, **self._kwargs)
+            return AuthPrest(access_token, access_expiration, self.cache, **self._kwargs)
         except CRESTException as e:
             raise e
         except Exception as e:
