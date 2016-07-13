@@ -7,22 +7,22 @@ __all__ = ['Cache']
 
 class Cache:
 
-    def __init__(self, prest, base_url):
+    def __init__(self, preston, base_url):
         """
         The cache is desgined to respect the caching rules of CREST as to
         not request a page more often than it is updated by the server.
 
         Args:
-            prest (prest.Prest): the containing Prest instance
+            preston (preston.Preston): the containing Preston instance
             base_url (str): the root url of CREST
 
         Returns:
             None
         """
         self.data = {}
-        self._prest = prest
-        self.logger = prest.logger
-        self.fetch = prest.__call__
+        self._preston = preston
+        self.logger = preston.logger
+        self.fetch = preston.__call__
         self.base_url = base_url
 
     def _proper_url(self, url):
@@ -80,7 +80,7 @@ class Cache:
 
         Args:
             url (str) - url to check
-            data (prest.cache.Page) - page of data for that url
+            data (preston.cache.Page) - page of data for that url
 
         Returns:
             value (any) of either the passed data or None if it expired

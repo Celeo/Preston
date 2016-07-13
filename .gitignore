@@ -2,8 +2,7 @@ __pycache__
 *.pyc
 env
 build
-EVEPrest.egg-info
-Prest.egg-info
+Preston.egg-info
 dist
 .cache/
 .coverage

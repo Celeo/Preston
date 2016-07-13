@@ -6,11 +6,9 @@ import time
 
 import requests
 
-from prest.errors import *
-from prest.cache import *
+from preston.crest.errors import *
+from preston.crest.cache import *
 
-
-__version__ = '1.3.5'
 
 base_url = 'https://crest-tq.eveonline.com/'
 image_url = 'https://image.eveonline.com/'
@@ -18,10 +16,10 @@ oauth_url = 'https://login.eveonline.com/oauth/'
 token_url = 'https://login.eveonline.com/oauth/token'
 authorize_url = 'https://login.eveonline.com/oauth/authorize'
 
-__all__ = ['Prest', 'AuthPrest', 'APIElement']
+__all__ = ['Preston', 'AuthPreston', 'APIElement']
 
 
-class Prest:
+class Preston:
 
     def __init__(self, **kwargs):
         """
@@ -46,7 +44,7 @@ class Prest:
         self.__configure_logger(kwargs.get('logging_level', logging.ERROR))
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': kwargs.get('User_Agent', 'Prest v' + __version__),
+            'User-Agent': kwargs.get('User_Agent', 'Preston (github.com/Celeo/Preston)'),
             'Accept': 'application/vnd.ccp.eve.Api-v{}+json'.format(kwargs.get('Version', 3)),
         })
         self.client_id = kwargs.get('client_id', None)
@@ -66,7 +64,7 @@ class Prest:
         Returns:
             None
         """
-        self.logger = logging.getLogger('prest.' + self.__class__.__name__)
+        self.logger = logging.getLogger('preston.' + self.__class__.__name__)
         self.logger.setLevel(logging_level)
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter(style='{', fmt='{asctime} [{levelname}] {message}', datefmt='%Y-%m-%d %H:%M:%S'))
@@ -170,7 +168,7 @@ class Prest:
         Returns:
             value (str)
         """
-        return '<Prest>'
+        return '<Preston>'
 
     def get_authorize_url(self):
         """
@@ -213,7 +211,7 @@ class Prest:
             code (str) - code from the SSO login
 
         Returns:
-            value (prest.AuthPrest) of the new CREST connection
+            value (preston.AuthPreston) of the new CREST connection
         """
         try:
             self.logger.debug('Getting access token from auth code')
@@ -229,7 +227,7 @@ class Prest:
             access_token = r.json()['access_token']
             access_expiration = r.json()['expires_in']
             self.logger.info('Successfully got the access token')
-            return AuthPrest(access_token, access_expiration, self.cache, **self._kwargs)
+            return AuthPreston(access_token, access_expiration, self.cache, **self._kwargs)
         except CRESTException as e:
             raise e
         except Exception as e:
@@ -245,10 +243,10 @@ class Prest:
             refresh_token (str) - refresh token from CREST
 
         Returns:
-            new authenticated (prest.AuthPrest) connection
+            new authenticated (preston.AuthPreston) connection
         """
         access_token, access_expiration = self._refresh_to_access(refresh_token)
-        return AuthPrest(access_token, access_expiration, self.cache, refresh_token=refresh_token, **self._kwargs)
+        return AuthPreston(access_token, access_expiration, self.cache, refresh_token=refresh_token, **self._kwargs)
 
     def _refresh_to_access(self, refresh_token):
         """
@@ -269,17 +267,17 @@ class Prest:
         return r.json()['access_token'], r.json()['expires_in']
 
 
-class AuthPrest(Prest):
+class AuthPreston(Preston):
 
     def __init__(self, access_token, access_expiration, cache, **kwargs):
         """
-        This class is a subclass of `prest.Prest` and modifies the session
+        This class is a subclass of `preston.Preston` and modifies the session
         headers to allow for authenticated calls to CREST.
 
         Args:
             access_token (str) - authentication token from EVE's OAuth
-            cache (prest.Cache) - cache from the `prest.Prest` superclass
-            kwargs - passed to `prest.Prest`'s __init__
+            cache (preston.Cache) - cache from the `preston.Preston` superclass
+            kwargs - passed to `preston.Preston`'s __init__
 
         Returns:
             None
@@ -290,7 +288,7 @@ class AuthPrest(Prest):
         self.cache = cache
         self.refresh_token = kwargs.get('refresh_token', None)
         self.session.headers.update({'Authorization': 'Bearer {}'.format(self.access_token)})
-        self.logger.info('AuthPrest init complete')
+        self.logger.info('AuthPreston init complete')
 
     def whoami(self):
         """
@@ -314,7 +312,7 @@ class AuthPrest(Prest):
         Returns:
             value (str)
         """
-        return '<AuthPrest>'
+        return '<AuthPreston>'
 
     def _get_new_access_token(self):
         """
@@ -333,7 +331,7 @@ class AuthPrest(Prest):
 
     def __getattr__(self, target):
         """
-        Supplements the prest.Prest call to `__getattr__` with
+        Supplements the preston.Preston call to `__getattr__` with
         a check for the expiration of the access token. If the
         access token is expired, an attempt is made to generate
         a new one from the resfresh_token.
@@ -344,7 +342,7 @@ class AuthPrest(Prest):
 
     def __call__(self):
         """
-        Supplements the prest.Prest call to `__call__` with
+        Supplements the preston.Preston call to `__call__` with
         a check for the expiration of the access token. If the
         access token is expired, an attempt is made to generate
         a new one from the resfresh_token.
@@ -356,25 +354,25 @@ class AuthPrest(Prest):
 
 class APIElement:
 
-    def __init__(self, url, data, prest):
+    def __init__(self, url, data, preston):
         """
         This class expands on the __getattr__ and __call__ functionality
-        of `prest.Prest` in order to navigate through CREST.
+        of `preston.Preston` in order to navigate through CREST.
 
         Args:
             url (str) - url being targeted
             data (dict) - data subset from the previous __getattr__ call
-            prest (prest.Prest) - super Prest instance
+            preston (preston.Preston) - super Preston instance
 
         Returns:
             None
         """
         self.url = url
         self.data = data
-        self._prest = prest
-        self.session = prest.session
-        self.logger = prest.logger
-        self.cache = prest.cache
+        self._preston = preston
+        self.session = preston.session
+        self.logger = preston.logger
+        self.cache = preston.cache
         self.cache.fetch = self.__call__
         self.logger.info('APIElement init: url = "{}"'.format(url))
         if not self.data:
@@ -399,7 +397,7 @@ class APIElement:
         if self.data:
             subset = self.data[target]
             if type(subset) in (dict, list):
-                return APIElement(self.url, subset, self._prest)
+                return APIElement(self.url, subset, self._preston)
             return subset
 
     def __getitem__(self, index):
@@ -418,7 +416,7 @@ class APIElement:
         if self.data:
             subset = self.data[index]
             if type(self.data[index]) in (dict, list):
-                return APIElement(self.url, subset, self._prest)
+                return APIElement(self.url, subset, self._preston)
             return subset
 
     def __call__(self):
@@ -434,8 +432,8 @@ class APIElement:
         self.logger.debug('Element call, url = "{}", has data: {}'.format(self.url, bool(self.data)))
         if self.data:
             if self.data.get('href'):
-                return APIElement(self.data['href'], None, self._prest)
-            return APIElement(self.url, self.data, self._prest)
+                return APIElement(self.data['href'], None, self._preston)
+            return APIElement(self.url, self.data, self._preston)
         if self.cache.check(self.url):
             if not self.data:
                 self.data = self.cache.get(self.url, ignore_expires=True)
@@ -488,7 +486,7 @@ class APIElement:
         for element in self.data:
             if all(element[key] == value for key, value in kwargs.items()):
                 if type(element) in (dict, list):
-                    return APIElement(self.url, element, self._prest)
+                    return APIElement(self.url, element, self._preston)
                 return element
         return None
 
