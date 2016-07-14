@@ -106,5 +106,5 @@ class Path:
         if cached:
             return cached
         data = xmltodict.parse(requests.get(url).text)['eveapi']
-        self.cache.set(url, data, data['cachedUntil'])
-        return data
+        self.cache.set(url, data['result'], data['cachedUntil'])
+        return data['result']

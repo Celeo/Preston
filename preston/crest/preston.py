@@ -44,7 +44,7 @@ class Preston:
         self.__configure_logger(kwargs.get('logging_level', logging.ERROR))
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': kwargs.get('User_Agent', 'Preston (github.com/Celeo/Preston)'),
+            'User-Agent': kwargs.get('user_agent', 'Preston (github.com/Celeo/Preston)'),
             'Accept': 'application/vnd.ccp.eve.Api-v{}+json'.format(kwargs.get('Version', 3)),
         })
         self.client_id = kwargs.get('client_id', None)

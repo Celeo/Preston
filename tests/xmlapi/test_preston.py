@@ -22,5 +22,5 @@ def test_eve_charid(preston):
     """
     Test the character name to id match for 'Celeo Servasse'
     """
-    result = preston.eve.CharacterId(names='Celeo Servasse')
-    assert(result['result']['rowset']['row']['@characterID'], 91316135)
+    data = preston.eve.CharacterId(names='Celeo Servasse')
+    assert(data['rowset']['row']['@characterID'], 91316135)
