@@ -28,17 +28,17 @@ preston = Preston()
 ### Attributes and calls
 
 * Calling
-  * on `preston.Preston`: reload the base URL data
-    * `preston()` -> the same `preston.Preston`
+  * on `preston.crest.Preston`: reload the base URL data
+    * `preston()` -> the same `preston.crest.Preston`
   * on `preston.APIElement`: navigate to a new page
     * `preston.foo()` -> `preston.APIElement`
 * Getting attribute by text or item by index
-  * from `preston.Preston`: return a data subset or navigate to a new page
+  * from `preston.crest.Preston`: return a data subset or navigate to a new page
     * `preston.foo` -> `str`, `int`, `float`, `preston.APIElement` of data subset, `preston.APIElement` to new page
   * from `preston.APIElement`: return a data subset
     * `preston.foo.bar` -> `str`, `int`, `float`, `preston.APIElement`
 
-To reduce typing, `preston.Preston.__getattr__` combines the functionality of `preston.APIElement.__getattr__` and `preston.APIElement.__call__` so that calls can be made like `preston.foo` instead of `preston().foo`.
+To reduce typing, `preston.crest.Preston.__getattr__` combines the functionality of `preston.APIElement.__getattr__` and `preston.APIElement.__call__` so that calls can be made like `preston.foo` instead of `preston().foo`.
 
 If you wanted to access the X position of the Kimoto constellation, the call would be:
 
@@ -74,7 +74,7 @@ preston.systems().items.find(name='Jita')().planets[3].moons[3]().name
 
 ### Using the cache
 
-When you make a call to `preston.foo`, the root CREST URL data stored locally will be checked for an expired cache timer (the root URL's data is loaded when instantiating a new `preston.Preston` object, you don't need to do it manually). If it's expired, the root URL will be gotten anew and cached. This is similar for `preston.foo().bar().baz()` - if all of `foo`, `bar`, and `baz` were dictionaries with `'href'` keys that pointed to new pages, each would use the cache to retrieve the page, only making a new request to CREST if the local copy of the page is either non-existent or expired.
+When you make a call to `preston.foo`, the root CREST URL data stored locally will be checked for an expired cache timer (the root URL's data is loaded when instantiating a new `preston.crest.Preston` object, you don't need to do it manually). If it's expired, the root URL will be gotten anew and cached. This is similar for `preston.foo().bar().baz()` - if all of `foo`, `bar`, and `baz` were dictionaries with `'href'` keys that pointed to new pages, each would use the cache to retrieve the page, only making a new request to CREST if the local copy of the page is either non-existent or expired.
 
 However, when getting attributes from a page, like `preston.foo().bar.baz`, neither `bar` or `baz` on the page will be using the cache. Thus, in order to make the same call multiple times over a period of time and using the cache, either make the full `preston.foo().bar.baz` call again, or save the last-called element as a local variable and call that:
 
@@ -95,7 +95,7 @@ print(foo().bar.baz)
 Accessing the authenticated parts of CREST is done through authenticating Preston:
 
 ```python
-from preston import *
+from preston.crest import Preston
 
 preston = Preston(client_id='', client_secret='', client_callback='')
 preston.get_authorize_url()
@@ -104,7 +104,7 @@ auth = preston.authenticate(code)
 
 In the code above, `get_authorize_url` returns a URL to redirect a web app client to so they can log into EVE's SSO. Once they've redirected back to your web application, pass the code in the returning URL from EVE to the `authenticate` call and assign the resulting `preston.AuthPreston` object.
 
-This `preston.AuthPreston` object works the same as the unathenticated `preston.Preston` object: use attributes and calls to navigate and load CREST data, respectively.
+This `preston.AuthPreston` object works the same as the unathenticated `preston.crest.Preston` object: use attributes and calls to navigate and load CREST data, respectively.
 
 Example of accessing a character's location:
 
