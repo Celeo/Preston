@@ -35,7 +35,7 @@ Page are cached when requested and are returned from the cache when subsequently
 To reduce the amount of typing, `preston.xmlapi.Preston` can store an authentication keyID and vCode and automatically pass them to called endpoints:
 
 ```python
-preston = Preston(keyID=1, vCode='')
+preston = Preston(key=1, code='')
 data = preston.account.APIKeyInfo()
 ```
 
