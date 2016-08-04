@@ -418,6 +418,7 @@ class APIElement:
             if type(self.data[index]) in (dict, list):
                 return APIElement(self.url, subset, self._preston)
             return subset
+        raise IndexError
 
     def __call__(self):
         """
