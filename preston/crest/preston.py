@@ -375,7 +375,7 @@ class APIElement:
         self.cache = preston.cache
         self.cache.fetch = self.__call__
         self.logger.info('APIElement init: url = "{}"'.format(url))
-        if not self.data:
+        if self.data is None:
             if self.cache.check(url):
                 self.data = self.cache.get(url, ignore_expires=True)
             else:
