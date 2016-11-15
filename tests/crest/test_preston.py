@@ -22,39 +22,39 @@ def test_single_page_element(preston):
     """
     Test getting an element from the base CREST page.
     """
-    assert(preston.serverName)
+    assert preston.serverName
 
 
 def test_second_page(preston):
     """
     Test getting a page off of the base CREST page.
     """
-    assert(preston.incursions())
+    assert preston.incursions()
 
 
 def test_second_page_element(preston):
     """
     Test gettign an element from a page off of the base CREST page.
     """
-    assert(preston.incursions().totalCount)
+    assert preston.incursions().totalCount
 
 
 def test_single_page_sub_link(preston):
     """
     Test accessing a page from a base CREST page subitem.
     """
-    assert(preston.sovereignty.campaigns())
+    assert preston.sovereignty.campaigns()
 
 
 def test_find_method(preston):
     """
     Test using the find method.
     """
-    assert(preston.systems().items.find(name='Jita')().planets[3].moons[3]().name)
+    assert preston.systems().items.find(name='Jita')().planets[3].moons[3]().name
 
 
 def test_getitem(preston):
     """
     Test getting an item by an index instead of attribute.
     """
-    assert(preston.bloodlines().items[0].race())
+    assert preston.bloodlines().items[0].race()

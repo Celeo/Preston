@@ -8,7 +8,7 @@ from preston.crest.preston import Preston, base_url
 @pytest.fixture(scope='module')
 def preston():
     """
-    Test fixture to provide a `preston.Preston` object to all methods.
+    Test fixture to provide a `preston.crest.preston.Preston` object to all methods.
     """
     return Preston()
 
@@ -18,28 +18,28 @@ def test_initialization_size(preston):
     Test the initial size of the cache, which should be 1 since
     `preston.Preston` fetches the base url data on initialization.
     """
-    assert(len(preston.cache.data) == 1)
+    assert len(preston.cache.data) == 1
 
 
 def test_proper_url(preston):
     """
     Test the url formatting method.
     """
-    assert(preston.cache._proper_url('') == base_url)
-    assert(preston.cache._proper_url('wars') == base_url + 'wars/')
-    assert(preston.cache._proper_url(base_url + 'wars') == base_url + 'wars/')
+    assert preston.cache._proper_url('') == base_url
+    assert preston.cache._proper_url('wars') == base_url + 'wars/'
+    assert preston.cache._proper_url(base_url + 'wars') == base_url + 'wars/'
 
 
 def test_expiration(preston):
     """
     Test the expiration calculation method.
     """
-    assert(preston.cache._get_expiration({}) == 0)
-    assert(preston.cache._get_expiration({'Cache-Control': 'no-cache'}) == 0)
-    assert(preston.cache._get_expiration({'Cache-Control': 'no-store'}) == 0)
-    assert(preston.cache._get_expiration({'Cache-Control': 'max-age=1'}) == 1)
-    assert(preston.cache._get_expiration({'Cache-Control': 'max-age=100'}) == 100)
-    assert(preston.cache._get_expiration({'Cache-Control': 'max-age=1234576890'}) == 1234576890)
+    assert preston.cache._get_expiration({}) == 0
+    assert preston.cache._get_expiration({'Cache-Control': 'no-cache'}) == 0
+    assert preston.cache._get_expiration({'Cache-Control': 'no-store'}) == 0
+    assert preston.cache._get_expiration({'Cache-Control': 'max-age=1'}) == 1
+    assert preston.cache._get_expiration({'Cache-Control': 'max-age=100'}) == 100
+    assert preston.cache._get_expiration({'Cache-Control': 'max-age=1234576890'}) == 1234576890
 
 
 def test_add_verify_page(preston):
@@ -64,19 +64,19 @@ def test_add_verify_page(preston):
     preston.cache.data.clear()
     r = Response('')
     preston.cache.set(r)
-    assert(len(preston.cache) == 1)
-    assert(preston.cache.check(''))
-    assert(preston.cache.get('') == {})
+    assert len(preston.cache) == 1
+    assert preston.cache.check('')
+    assert preston.cache.get('') == {}
 
     r = Response(base_url + 'test', {'foo': 'bar'})
     preston.cache.set(r)
-    assert(len(preston.cache) == 2)
-    assert(preston.cache.check('test'))
-    assert(preston.cache.get('test') == {'foo': 'bar'})
+    assert len(preston.cache) == 2
+    assert preston.cache.check('test')
+    assert preston.cache.get('test') == {'foo': 'bar'}
 
     r = Response(base_url + 'test2', {}, {'Cache-Control': 'max-age=1'})
     preston.cache.set(r)
-    assert(len(preston.cache) == 3)
+    assert len(preston.cache) == 3
     sleep(1)
-    assert(not preston.cache.check('test2'))
-    assert(len(preston.cache) == 2)
+    assert not preston.cache.check('test2')
+    assert len(preston.cache) == 2
