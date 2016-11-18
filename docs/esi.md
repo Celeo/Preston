@@ -32,4 +32,43 @@ preston.universe.structures()
 
 ## Authentication
 
-TODO
+Accessing the authenticated parts of ESI is done through authenticating Preston:
+
+```python
+from preston.esi import Preston
+
+preston = Preston(client_id='', client_secret='', client_callback='')
+preston.get_authorize_url()
+auth = preston.authenticate(code)
+```
+
+In the code above, `get_authorize_url` returns a URL to redirect a web app client to so they can log into EVE's SSO. Once they've redirected back to your web application, pass the code in the returning URL from EVE to the `authenticate` call and assign the resulting `preston.AuthPreston` object.
+
+This `preston.AuthPreston` object works the same as the unathenticated `preston.esi.Preston` object: use attributes and calls to navigate and load ESI data, respectively.
+
+Example of accessing a character's location:
+
+```python
+print(auth.decode().character().location())
+```
+
+## Refresh tokens
+
+When you authenticate for accessing ESI using a scope, Preston will get two tokens back: the access token, which is a temporary (20 minutes) token used for accessing ESI, and a refresh token that doesn't expire but cannot be used to directly access ESI. When the access token expires, Preston will get another access token from ESI using the refresh token.
+
+Since the refresh token doesn't expire, you'll want to keep that somewhere safe. Preston doesn't handle this for you.
+
+To start an authenticated session with Preston using a previously-fetched refresh token (you can get the existing refresh token with `preston.AuthPreston.refresh_token` as a `str`), do the following:
+
+```python
+preston = Preston(client_id='', client_secret='', client_callback='', user_agent='')
+auth = preston.use_refresh_token('previous-refresh-token')
+```
+
+## User Agent
+
+To set the User-Agent header, pass it to the `preston.esi.Preston` constructor:
+
+```python
+preston = Preston(user_agent='')
+```

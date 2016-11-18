@@ -73,7 +73,7 @@ Accessing the authenticated parts of CREST is done through authenticating Presto
 ```python
 from preston.crest import Preston
 
-preston = Preston(client_id='', client_secret='', client_callback='')
+preston = Preston(client_id='', client_secret='', client_callback='', user_agent='')
 preston.get_authorize_url()
 auth = preston.authenticate(code)
 ```
