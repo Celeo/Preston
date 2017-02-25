@@ -155,8 +155,9 @@ class Preston:
                 raise Exception('HTTP status code was {}; response: {}'.format(r.status_code, r.json()))
             access_token = r.json()['access_token']
             access_expiration = r.json()['expires_in']
+            refresh_token = r.json()['refresh_token']
             self.logger.info('Successfully got the access token')
-            return AuthPreston(access_token, access_expiration, self)
+            return AuthPreston(access_token, access_expiration, self, refresh_token)
         except Exception as e:
             raise e
         except Exception as e:
@@ -176,7 +177,7 @@ class Preston:
             preston.esi.preston.AuthPreston: new root object
         """
         access_token, access_expiration = self._refresh_to_access(refresh_token)
-        return AuthPreston(access_token, access_expiration, self, refresh_token=refresh_token, **self._kwargs)
+        return AuthPreston(access_token, access_expiration, self, refresh_token)
 
     def _refresh_to_access(self, refresh_token):
         """Get an access token from a refresh token.
