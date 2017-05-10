@@ -15,10 +15,10 @@ def preston():
 
 def test_initialization_size(preston):
     """
-    Test the initial size of the cache, which should be 1 since
-    `preston.Preston` fetches the base url data on initialization.
+    Test the initial size of the cache, which should be 0 since
+    CREST data is not fetched until the first data call.
     """
-    assert len(preston.cache.data) == 1
+    assert len(preston.cache.data) == 0
 
 
 def test_proper_url(preston):

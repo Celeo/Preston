@@ -52,7 +52,6 @@ class Preston:
         self.callback_url = kwargs.get('callback_url', None)
         self.scope = kwargs.get('scope', '')
         self.cache = Cache(self, base_url)
-        self()
 
     def __configure_logger(self, logging_level):
         """
