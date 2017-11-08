@@ -31,10 +31,10 @@ def test_expiration(preston):
         'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%d %b %Y %H:%M:%S GMT')
     }) == 1)
     assert(preston.cache._get_expiration({
-        'expires': (datetime.utcnow() + timedelta(seconds=100)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+        'expires': (datetime.utcnow() + timedelta(seconds=100)).strftime('%d %b %Y %H:%M:%S GMT')
     }) == 100)
     assert(preston.cache._get_expiration({
-        'expires': (datetime.utcnow() + timedelta(seconds=1234576890)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+        'expires': (datetime.utcnow() + timedelta(seconds=1234576890)).strftime('%d %b %Y %H:%M:%S GMT')
     }) == 1234576890)
 
 
@@ -49,7 +49,7 @@ def test_add_verify_page(preston):
             self.url = preston.cache._proper_url(url)
             self.data = data or {}
             self.headers = {
-                'expires': (datetime.utcnow() + timedelta(seconds=300)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+                'expires': (datetime.utcnow() + timedelta(seconds=300)).strftime('%d %b %Y %H:%M:%S GMT')
             }
             if headers:
                 self.headers.update(headers)
@@ -69,7 +69,7 @@ def test_add_verify_page(preston):
     assert preston.cache.check('test') == {'foo': 'bar'}
 
     r = Response(base_url + 'test2', {}, {
-        'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+        'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%d %b %Y %H:%M:%S GMT')
     })
     preston.cache.set(r)
     assert len(preston.cache) == 3
