@@ -28,7 +28,7 @@ def test_expiration(preston):
     """ Test the expiration calculation method. """
     assert preston.cache._get_expiration({}) == 0
     assert(preston.cache._get_expiration({
-        'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+        'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%d %b %Y %H:%M:%S GMT')
     }) == 1)
     assert(preston.cache._get_expiration({
         'expires': (datetime.utcnow() + timedelta(seconds=100)).strftime('%a, %d %b %Y %H:%M:%S GMT')
