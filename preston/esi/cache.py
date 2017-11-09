@@ -59,7 +59,7 @@ class Cache:
         expiration_str = headers.get('expires')
         if not expiration_str:
             return 0
-        expiration = datetime.strptime(expiration_str, '%d %b %Y %H:%M:%S %Z')
+        expiration = datetime.strptime(expiration_str, '%a, %d %b %Y %H:%M:%S %Z')
         delta = (expiration - datetime.utcnow()).total_seconds()
         return math.ceil(abs(delta))
 
