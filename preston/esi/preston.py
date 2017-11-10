@@ -179,6 +179,21 @@ class Preston:
         access_token, access_expiration = self._refresh_to_access(refresh_token)
         return AuthPreston(access_token, access_expiration, self, refresh_token)
 
+
+    def use_saved(self, refresh_token, access_token, access_expiration):
+        """Use saved tokens and expiration, e.g. when you need get info for multiple characters in loop
+
+        Args:
+            refresh_token (str): refresh token from ESI
+            access_token (str): authentication token from EVE's OAuth
+            access_expiration (str): expiration date from EVE's OAuth
+
+        """
+        auth = AuthPreston(access_token, 0, self, refresh_token)
+        auth.access_expiration = access_expiration
+        return auth
+
+
     def _refresh_to_access(self, refresh_token):
         """Get an access token from a refresh token.
 
@@ -215,7 +230,7 @@ class AuthPreston(Preston):
         super().__init__(**base._kwargs)
         self.cache = base.cache
         self.refresh_token = refresh_token
-        self.session.headers.update({'Authorization': 'Bearer {}'.format(self.access_token)})
+        self._update_access_token_header()
         self.logger.info('AuthPreston init complete')
 
     def whoami(self):
@@ -273,7 +288,13 @@ class AuthPreston(Preston):
         """
         if time.time() > self.access_expiration:
             self._get_new_access_token()
+            self._update_access_token_header()
+
         return super().__getattr__(attr)
+
+
+    def _update_access_token_header(self):
+        self.session.headers.update({'Authorization': 'Bearer {}'.format(self.access_token)})
 
 
 class Page:
