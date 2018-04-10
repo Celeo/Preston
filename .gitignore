@@ -7,3 +7,4 @@ dist
 .cache/
 .coverage
 .vscode
+.mypy_cache

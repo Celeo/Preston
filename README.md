@@ -21,11 +21,7 @@ python setup.py install
 ## Initialization
 
 ```python
-from preston.crest import Preston
-# or
-from preston.xmlapi import Preston
-# or
-from preston.esi import Preston
+from preston import Preston
 
 preston = Preston()
 ```
