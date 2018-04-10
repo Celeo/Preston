@@ -6,13 +6,13 @@ import time
 
 import requests
 
-from preston.esi.cache import Cache
+from preston.cache import Cache
 
 
-base_url = 'https://esi.tech.ccp.is/'
-oauth_url = 'https://login.eveonline.com/oauth/'
-token_url = 'https://login.eveonline.com/oauth/token'
-authorize_url = 'https://login.eveonline.com/oauth/authorize'
+BASE_URL = 'https://esi.tech.ccp.is/'
+OAUTH_URL = 'https://login.eveonline.com/oauth/'
+TOKEN_URL = 'https://login.eveonline.com/oauth/token'
+AUTHORIZE_URL = 'https://login.eveonline.com/oauth/authorize'
 
 __all__ = ['Preston', 'AuthPreston', 'Page']
 
@@ -20,7 +20,7 @@ __all__ = ['Preston', 'AuthPreston', 'Page']
 class Preston:
 
     def __init__(self, **kwargs):
-        """preston.esi.preston.Preston
+        """preston.preston.Preston
 
         This class is the base for accessing ESI. It contains the base url's
         data for building urls as ESI was deigned to do instead of using hard-
@@ -52,7 +52,7 @@ class Preston:
         self.callback_url = kwargs.get('callback_url', None)
         self.scope = kwargs.get('scope', '')
         self.__configure_logger(kwargs.get('logging_level', logging.ERROR))
-        self.cache = Cache(self, base_url)
+        self.cache = Cache(self, BASE_URL)
 
     def __configure_logger(self, logging_level):
         """Configure the internal debugging logger
@@ -78,7 +78,7 @@ class Preston:
                 version string to set
 
         Returns:
-            preston.esi.preston.Page: new Page object if
+            preston.preston.Page: new Page object if
                 the version-setting function wasn't used, otherwise
                 this same object with the version set
         """
@@ -96,7 +96,7 @@ class Preston:
         Returns:
             str: string representation
         """
-        return '<preston.esi.preston.Preston>'
+        return '<preston.preston.Preston>'
 
     def get_authorize_url(self):
         """Get authorize URL for the SSO.
@@ -111,7 +111,7 @@ class Preston:
             str: the url to redirect to
         """
         return '{}?response_type=code&redirect_uri={}&client_id={}&scope={}'.format(
-            authorize_url, self.callback_url, self.client_id, self.scope)
+            AUTHORIZE_URL, self.callback_url, self.client_id, self.scope)
 
     def _build_auth_headers(self):
         """Create authentication headers.
@@ -140,7 +140,7 @@ class Preston:
             code (str): code from the SSO login
 
         Returns:
-            preston.esi.preston.AuthPreston: new root object
+            preston.preston.AuthPreston: new root object
         """
         try:
             self.logger.debug('Getting access token from auth code')
@@ -149,7 +149,7 @@ class Preston:
                 'grant_type': 'authorization_code',
                 'code': code
             }
-            r = self.session.post(oauth_url + 'token', headers=headers, data=data)
+            r = self.session.post(OAUTH_URL + 'token', headers=headers, data=data)
             if not r.status_code == 200:
                 self.logger.error('An error occurred with getting the access token')
                 raise Exception('HTTP status code was {}; response: {}'.format(r.status_code, r.json()))
@@ -174,11 +174,10 @@ class Preston:
             refresh_token (str): refresh token from ESI
 
         Returns:
-            preston.esi.preston.AuthPreston: new root object
+            preston.preston.AuthPreston: new root object
         """
         access_token, access_expiration = self._refresh_to_access(refresh_token)
         return AuthPreston(access_token, access_expiration, self, refresh_token)
-
 
     def use_saved(self, refresh_token, access_token, access_expiration):
         """Use saved tokens and expiration, e.g. when you need get info for multiple characters in loop
@@ -192,7 +191,6 @@ class Preston:
         auth = AuthPreston(access_token, 0, self, refresh_token)
         auth.access_expiration = access_expiration
         return auth
-
 
     def _refresh_to_access(self, refresh_token):
         """Get an access token from a refresh token.
@@ -208,7 +206,7 @@ class Preston:
             'grant_type': 'refresh_token',
             'refresh_token': refresh_token
         }
-        r = self.session.post(token_url, headers=headers, data=data)
+        r = self.session.post(TOKEN_URL, headers=headers, data=data)
         return r.json()['access_token'], r.json()['expires_in']
 
 
@@ -217,13 +215,13 @@ class AuthPreston(Preston):
     def __init__(self, access_token, access_expiration, base, refresh_token=None):
         """Authenticated ESI access class.
 
-        This class is a subclass of `preston.esi.preston.Preston` and modifies the session
+        This class is a subclass of `preston.preston.Preston` and modifies the session
         headers to allow for authenticated calls to ESI.
 
         Args:
             access_token (str): authentication token from EVE's OAuth
-            cache (preston.Cache): cache from the `preston.esi.preston.Preston` superclass
-            kwargs (dict): passed to `preston.esi.preston.Preston`'s __init__
+            cache (preston.Cache): cache from the `preston.preston.Preston` superclass
+            kwargs (dict): passed to `preston.preston.Preston`'s __init__
         """
         self.access_token = access_token
         self.access_expiration = time.time() + access_expiration
@@ -242,7 +240,7 @@ class AuthPreston(Preston):
         Returns:
             str: authenticated character's name
         """
-        return self.session.get(oauth_url + 'verify').json()
+        return self.session.get(OAUTH_URL + 'verify').json()
 
     def __str__(self):
         """Return a string representation of the object.
@@ -253,7 +251,7 @@ class AuthPreston(Preston):
         Returns:
             str: string representation
         """
-        return '<preston.esi.preston.AuthPreston>'
+        return '<preston.preston.AuthPreston>'
 
     def _get_new_access_token(self):
         """Gets a new access token from CREST using the stored refresh token.
@@ -272,7 +270,7 @@ class AuthPreston(Preston):
     def __getattr__(self, attr):
         """Build a URL to query.
 
-        Supplements the preston.esi.preston.Preston call to
+        Supplements the preston.preston.Preston call to
         `__getattr__` with a check for the expiration of the
         access token. If the access token is expired, an attempt
         is made to generate a new one from the resfresh_token.
@@ -282,7 +280,7 @@ class AuthPreston(Preston):
                 version string to set
 
         Returns:
-            preston.esi.preston.Page: new Page object if
+            preston.preston.Page: new Page object if
                 the version-setting function wasn't used, otherwise
                 this same object with the version set
         """
@@ -291,7 +289,6 @@ class AuthPreston(Preston):
             self._update_access_token_header()
 
         return super().__getattr__(attr)
-
 
     def _update_access_token_header(self):
         self.session.headers.update({'Authorization': 'Bearer {}'.format(self.access_token)})
@@ -303,7 +300,7 @@ class Page:
         """Object representing a page on ESI
 
         Args:
-            base (preston.esi.preston.Preston or preston.esi.preston.Page): base object
+            base (preston.preston.Preston or preston.preston.Page): base object
             endpoint (str): which endpoint (or piece) the code is building
         """
         self._base = base
@@ -321,7 +318,7 @@ class Page:
             attr (str): next endpoint component
 
         Returns:
-            preston.esi.preston.Page: new Page object with next endpoint component
+            preston.preston.Page: new Page object with next endpoint component
         """
         return Page(self._base, self.endpoint + '/' + str(attr))
 
@@ -338,7 +335,7 @@ class Page:
             key (any): next endpoint component
 
         Returns:
-            preston.esi.preston.Page: new Page object with next endpoint component
+            preston.preston.Page: new Page object with next endpoint component
         """
         return Page(self._base, self.endpoint + '/' + str(key))
 
@@ -357,7 +354,7 @@ class Page:
             dict: json data from ESI
         """
         url = (
-            base_url +
+            BASE_URL +
             self.version +
             '/' + self.endpoint +
             ('/{}/'.format(value) if value else '/') +
@@ -383,4 +380,4 @@ class Page:
         Returns:
             str: string representation
         """
-        return '<preston.esi.preston.Page: {}>'.format(self.endpoint)
+        return '<preston.preston.Page: {}>'.format(self.endpoint)

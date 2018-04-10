@@ -6,3 +6,4 @@ Preston.egg-info
 dist
 .cache/
 .coverage
+.vscode

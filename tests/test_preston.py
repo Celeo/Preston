@@ -1,6 +1,6 @@
 import pytest
 
-from preston.esi import *
+from preston.preston import Preston
 
 
 @pytest.fixture(scope='module')

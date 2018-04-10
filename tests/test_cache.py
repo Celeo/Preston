@@ -3,12 +3,12 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from preston.esi.preston import Preston, base_url
+from preston.preston import Preston, BASE_URL
 
 
 @pytest.fixture(scope='module')
 def preston():
-    """ Test fixture to provide a `preston.esi.preston.Preston` object to all methods. """
+    """ Test fixture to provide a `preston.preston.Preston` object to all methods. """
     return Preston()
 
 
@@ -19,9 +19,9 @@ def test_initialization_size(preston):
 
 def test_proper_url(preston):
     """ Test the url formatting method. """
-    assert preston.cache._proper_url('') == base_url
-    assert preston.cache._proper_url('wars') == base_url + 'wars/'
-    assert preston.cache._proper_url(base_url + 'wars') == base_url + 'wars/'
+    assert preston.cache._proper_url('') == BASE_URL
+    assert preston.cache._proper_url('wars') == BASE_URL + 'wars/'
+    assert preston.cache._proper_url(BASE_URL + 'wars') == BASE_URL + 'wars/'
 
 
 def test_expiration(preston):
@@ -63,12 +63,12 @@ def test_add_verify_page(preston):
     assert len(preston.cache) == 1
     assert preston.cache.check('') == {}
 
-    r = Response(base_url + 'test', {'foo': 'bar'})
+    r = Response(BASE_URL + 'test', {'foo': 'bar'})
     preston.cache.set(r)
     assert len(preston.cache) == 2
     assert preston.cache.check('test') == {'foo': 'bar'}
 
-    r = Response(base_url + 'test2', {}, {
+    r = Response(BASE_URL + 'test2', {}, {
         'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
     })
     preston.cache.set(r)
