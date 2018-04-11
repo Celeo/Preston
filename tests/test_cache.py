@@ -3,50 +3,37 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from preston.preston import Preston, BASE_URL
+from preston.preston import Preston
+from preston.cache import Cache
 
 
 @pytest.fixture(scope='module')
-def preston():
-    """ Test fixture to provide a `preston.preston.Preston` object to all methods. """
-    return Preston()
+def cache():
+    return Cache()
 
 
-def test_initialization_size(preston):
-    """ Test the initial size of the cache. """
-    assert len(preston.cache.data) == 0
+def test_initialization_size(cache):
+    assert len(cache.data) == 0
 
 
-def test_proper_url(preston):
-    """ Test the url formatting method. """
-    assert preston.cache._proper_url('') == BASE_URL
-    assert preston.cache._proper_url('wars') == BASE_URL + 'wars/'
-    assert preston.cache._proper_url(BASE_URL + 'wars') == BASE_URL + 'wars/'
-
-
-def test_expiration(preston):
-    """ Test the expiration calculation method. """
-    assert preston.cache._get_expiration({}) == 0
-    assert(preston.cache._get_expiration({
+def test_expiration(cache):
+    assert cache._get_expiration({}) == 0
+    assert(cache._get_expiration({
         'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
     }) == 1)
-    assert(preston.cache._get_expiration({
+    assert(cache._get_expiration({
         'expires': (datetime.utcnow() + timedelta(seconds=100)).strftime('%a, %d %b %Y %H:%M:%S GMT')
     }) == 100)
-    assert(preston.cache._get_expiration({
+    assert(cache._get_expiration({
         'expires': (datetime.utcnow() + timedelta(seconds=1234576890)).strftime('%a, %d %b %Y %H:%M:%S GMT')
     }) == 1234576890)
 
 
-def test_add_verify_page(preston):
-    """ Test adding and validating data to the cache. """
+def test_add_verify_page(cache):
     class Response:
 
         def __init__(self, url, data=None, headers=None):
-            """
-            Emulate a `requests.Response` object.
-            """
-            self.url = preston.cache._proper_url(url)
+            self.url = url
             self.data = data or {}
             self.headers = {
                 'expires': (datetime.utcnow() + timedelta(seconds=300)).strftime('%a, %d %b %Y %H:%M:%S GMT')
@@ -57,22 +44,22 @@ def test_add_verify_page(preston):
         def json(self):
             return self.data
 
-    preston.cache.data.clear()
+    cache.data.clear()
     r = Response('')
-    preston.cache.set(r)
-    assert len(preston.cache) == 1
-    assert preston.cache.check('') == {}
+    cache.set(r)
+    assert len(cache) == 1
+    assert cache.check('') == {}
 
-    r = Response(BASE_URL + 'test', {'foo': 'bar'})
-    preston.cache.set(r)
-    assert len(preston.cache) == 2
-    assert preston.cache.check('test') == {'foo': 'bar'}
+    r = Response(Preston.BASE_URL + '/test', {'foo': 'bar'})
+    cache.set(r)
+    assert len(cache) == 2
+    assert cache.check(Preston.BASE_URL + '/test') == {'foo': 'bar'}
 
-    r = Response(BASE_URL + 'test2', {}, {
+    r = Response(Preston.BASE_URL + '/test2', {}, {
         'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
     })
-    preston.cache.set(r)
-    assert len(preston.cache) == 3
+    cache.set(r)
+    assert len(cache) == 3
     sleep(1)
-    assert not preston.cache.check('test2')
-    assert len(preston.cache) == 2
+    assert not cache.check(Preston.BASE_URL + '/test2')
+    assert len(cache) == 2
