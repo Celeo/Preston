@@ -7,7 +7,7 @@ from preston.preston import Preston
 from preston.cache import Cache
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def cache():
     return Cache()
 
