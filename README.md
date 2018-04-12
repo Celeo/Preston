@@ -1,6 +1,6 @@
 # Preston
 
-Preston is a Python library for accessing EVE Online's CREST, XML, and ESI APIs.
+Preston is a Python library for accessing EVE Online's ESI API.
 
 ## Installation
 
@@ -28,4 +28,4 @@ preston = Preston()
 
 # Usage
 
-See the documents under `docs/` for the modules' usages.
+TODO
