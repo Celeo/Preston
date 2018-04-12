@@ -40,7 +40,6 @@ class Preston:
     Args:
         kwargs: various configuration options
     """
-
     BASE_URL = 'https://esi.tech.ccp.is'
     SPEC_URL = BASE_URL + '/_{}/swagger.json'
     OAUTH_URL = 'https://login.eveonline.com/oauth/'
@@ -67,8 +66,9 @@ class Preston:
         self.access_expiration = kwargs.get('access_expiration')
         self.refresh_token = kwargs.get('refresh_token')
         self._kwargs = kwargs
-        self._try_refresh_access_token()
-        self._update_access_token_header()
+        if not kwargs.get('no_update_token', False):
+            self._try_refresh_access_token()
+            self._update_access_token_header()
 
     def copy(self) -> 'Preston':
         """Creates a copy of this Preston object.
@@ -85,7 +85,7 @@ class Preston:
         Returns:
             new Preston instance
         """
-        return Preston(self._kwargs)
+        return Preston(**self._kwargs)
 
     def _get_access_from_refresh(self) -> Tuple[str, float]:
         """Uses the stored refresh token to get a new access token.

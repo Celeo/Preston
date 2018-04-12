@@ -7,7 +7,7 @@ with open('preston/__init__.py') as f:
 
 setup(
     name='Preston',
-    author='Matt Boulanger',
+    author='Matt "Celeo" Boulanger',
     author_email='celeodor@gmail.com',
     version=version,
     license='MIT',
@@ -17,8 +17,7 @@ setup(
     packages=['preston', 'preston.crest', 'preston.xmlapi', 'preston.esi'],
     keywords=['eve online', 'crest', 'api'],
     install_requires=[
-        'requests>=2.10.0',
-        'xmltodict>=0.10.2'
+        'requests>=2.18.4'
     ],
     classifiers=[
         'Environment :: Console',
