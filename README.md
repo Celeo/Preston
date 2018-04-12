@@ -1,5 +1,8 @@
 # Preston
 
+[![Build Status](https://travis-ci.org/Celeo/Preston.svg?branch=master)](https://travis-ci.org/Celeo/Preston)
+[![codecov](https://codecov.io/gh/Celeo/Preston/branch/master/graph/badge.svg)](https://codecov.io/gh/Celeo/Preston)
+
 Preston is a Python library for accessing EVE Online's ESI API.
 
 ## Quick links
