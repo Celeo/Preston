@@ -45,6 +45,7 @@ class Preston:
     OAUTH_URL = 'https://login.eveonline.com/oauth/'
     TOKEN_URL = OAUTH_URL + 'token'
     AUTHORIZE_URL = OAUTH_URL + 'authorize'
+    WHOAMI_URL = OAUTH_URL + 'verify'
     METHODS = ['get', 'post', 'put', 'delete']
     OPERATION_ID_KEY = 'operationId'
     VAR_REPLACE_REGEX = r'{(\w+)}'
@@ -270,6 +271,23 @@ class Preston:
             replace_from = match.group(0)
             replace_with = str(data[match.group(1)])
             path = path.replace(replace_from, replace_with)
+
+    def whoami(self) -> dict:
+        """Returns the basic information about the authenticated character.
+
+        Obviously doesn't do anything if this Preston instance is not
+        authenticated, so it returns an empty dict.
+
+        Args:
+            None
+
+        Returns:
+            character info if authenticated, otherwise an empty dict
+        """
+        if not self.access_token:
+            return {}
+        self._try_refresh_access_token()
+        return self.session.get(self.WHOAMI_URL).json()
 
     def get_path(self, path: str, data: dict) -> dict:
         """Queries the ESI by an endpoint URL.

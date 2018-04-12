@@ -111,3 +111,7 @@ def test_insert_vars(empty):
     assert empty._insert_vars(path, data) == '/bar/bar'
     path = '/{foo}/{bar}'
     assert empty._insert_vars(path, data) == '/bar/baz'
+
+
+def test_whoami_unauth(empty):
+    assert empty.whoami() == {}
