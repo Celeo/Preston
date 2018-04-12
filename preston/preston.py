@@ -13,8 +13,8 @@ class Preston:
     BASE_URL = 'https://esi.tech.ccp.is'
     SPEC_URL = BASE_URL + '/_{}/swagger.json'
     OAUTH_URL = 'https://login.eveonline.com/oauth/'
-    TOKEN_URL = OAUTH_URL + 'oauth/token'
-    AUTHORIZE_URL = OAUTH_URL + 'oauth/authorize'
+    TOKEN_URL = OAUTH_URL + 'token'
+    AUTHORIZE_URL = OAUTH_URL + 'authorize'
     METHODS = ['get', 'post', 'put', 'delete']
     OPERATION_ID_KEY = 'operationId'
     VAR_REPLACE_REGEX = r'{(\w+)}'
@@ -39,16 +39,20 @@ class Preston:
         self._try_refresh_access_token()
         self._update_access_token_header()
 
+    def copy(self) -> 'Preston':
+        return Preston(self._kwargs)
+
     def _get_access_from_refresh(self) -> Tuple[str, float]:
-        headers = self._build_auth_headers()
+        headers = self._get_authorization_headers()
         data = {
             'grant_type': 'refresh_token',
             'refresh_token': self.refresh_token
         }
         r = self.session.post(self.TOKEN_URL, headers=headers, data=data)
-        return (r.json()['access_token'], r.json()['expires_in'])
+        response_data = r.json()
+        return (response_data['access_token'], response_data['expires_in'])
 
-    def _build_auth_headers(self) -> dict:
+    def _get_authorization_headers(self) -> dict:
         auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('latin-1')).decode('latin-1')
         auth = auth.replace('\n', '').replace(' ', '')
         auth = 'Basic {}'.format(auth)
@@ -77,7 +81,8 @@ class Preston:
             return
         if not self.refresh_token:
             raise Exception('Access token is expired and there is no stored refresh token')
-        self.access_token, self.access_expiration = self.get_access_from_refresh(self.refresh_token)
+        self.access_token, self.access_expiration = self._get_access_from_refresh()
+        self.access_expiration = time.time() + self.access_expiration
 
     def _is_access_token_expired(self) -> bool:
         return time.time() > self.access_expiration
@@ -89,8 +94,20 @@ class Preston:
         )
 
     def authenticate(self, code: str) -> 'Preston':
-        # TODO
-        pass
+        headers = self._get_authorization_headers()
+        data = {
+            'grant_type': 'authorization_code',
+            'code': code
+        }
+        r = self.session.post(self.TOKEN_URL, headers=headers, data=data)
+        if not r.status_code == 200:
+            raise Exception(f'Could not authenticate, got repsonse code {r.status_code}')
+        new_kwargs = dict(self._kwargs)
+        response_data = r.json()
+        new_kwargs['access_token'] = response_data['access_token']
+        new_kwargs['access_expiration'] = time.time() + float(response_data['expires_in'])
+        new_kwargs['refresh_token'] = response_data['refresh_token']
+        return Preston(**new_kwargs)
 
     def _update_access_token_header(self) -> None:
         if self.access_token:
