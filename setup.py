@@ -11,7 +11,7 @@ setup(
     author_email='celeodor@gmail.com',
     version=version,
     license='MIT',
-    description='EVE CREST and XMLAPI access tool',
+    description='EVE ESI API access tool',
     url='https://github.com/Celeo/Preston',
     platforms='any',
     packages=['preston'],
