@@ -55,7 +55,7 @@ class Preston:
         self.version = kwargs.get('version', 'latest')
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': kwargs.get('user_agent', 'Preston (github.com/Celeo/Preston)'),
+            'User-Agent': kwargs.get('user_agent', ''),
             'Accept': 'application/json'
         })
         self.client_id = kwargs.get('client_id')
