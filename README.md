@@ -92,4 +92,4 @@ an endpoint that requires a specific scope, your app on EVE Devs has that scoped
 
 ## Contributing
 
-PRs are welcome. Please follow PEP8 (I'm lenient on E501).
+PRs are welcome. Please follow PEP8 (I'm lenient on E501) and use [Google-style docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
