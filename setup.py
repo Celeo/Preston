@@ -14,8 +14,8 @@ setup(
     description='EVE CREST and XMLAPI access tool',
     url='https://github.com/Celeo/Preston',
     platforms='any',
-    packages=['preston', 'preston.crest', 'preston.xmlapi', 'preston.esi'],
-    keywords=['eve online', 'crest', 'api'],
+    packages=['preston'],
+    keywords=['eve online', 'api', 'esi'],
     install_requires=[
         'requests>=2.18.4'
     ],
