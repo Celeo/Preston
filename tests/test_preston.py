@@ -17,7 +17,3 @@ def test_starting_point(preston):
 def test_get_spec_cache(preston):
     preston.spec = {}
     assert preston.spec == {}
-
-
-def test_get_spec_fresh(preston):
-    pass

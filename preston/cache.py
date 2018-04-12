@@ -67,7 +67,7 @@ class Cache:
             data = None
         return data
 
-    def check(self, url: str) -> Optional['SavedEndpoint']:
+    def check(self, url: str) -> Optional[dict]:
         """Check if data for a url has expired.
 
         Data is not fetched again if it has expired.
