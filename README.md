@@ -66,7 +66,7 @@ preston = Preston(
     client_id='something',
     client_secret='something',
     callback_url='something',
-    scope='maybe something',
+    scope='maybe_something',
 )
 ```
 
@@ -92,6 +92,29 @@ Note the return variable and it's reassignment: this method returns a *new* inst
 Finally for #3, having followed the steps above, you just make calls like previously, but you can do so to the authenticated-only endpoints. Make sure that if you're calling
 an endpoint that requires a specific scope, your app on EVE Devs has that scoped added and you've supplied it to the Preston initialization.
 
+### Resuming authentication
+
+If your app uses scopes, it'll return a `refresh_token` alongside the `access_token`. The access token, per usual, only lasts 20 minutes before it expires. In this situation,
+the refresh token can be used to get a *new* access token. If your Preston instance has a refresh token, this will be done automatically when the access token expires.
+
+You can also get this refresh token from the Preston instance with `token = preston.refresh_token`. This can be then stored somewhere (securely) and used again later by
+passing the token to Preston's constructor:
+
+```python
+preston = Preston(
+    user_agent='some_user_agent',
+    client_id='something',
+    client_secret='something',
+    callback_url='something',
+    scope='maybe_something',
+    refresh_token='your_token_here'
+)
+```
+
+Preston will take the refresh token and attempt to get a new access token from it.
+
+On that note, you can also pass the `access_token` to a new Preston instance, but there's less of a use case for that, as either you have an app with scopes, yielding a refresh token,
+or an authentication-only app where you only use the access token to verify identity and some basic information before moving on.
 
 ## Contributing
 
