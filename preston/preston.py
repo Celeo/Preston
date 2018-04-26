@@ -1,7 +1,7 @@
 import base64
 import re
 import time
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any, Union
 
 import requests
 
@@ -123,39 +123,6 @@ class Preston:
         headers = {'Authorization': auth}
         return headers
 
-    def _get_spec(self) -> dict:
-        """Fetches the OpenAPI spec from the server.
-
-        If the spec has already been fetched, the cached version is returned instead.
-
-        ArgS:
-            None
-
-        Returns:
-            OpenAPI spec data
-        """
-        if self.spec:
-            return self.spec
-        self.spec = requests.get(self.SPEC_URL.format(self.version)).json()
-        return self.spec
-
-    def _get_path_for_op_id(self, id: str) -> Optional[str]:
-        """Searches the spec for a path matching the operation id.
-
-        Args:
-            id: operation id
-
-        Returns:
-            path to the endpoint, or None if not found
-        """
-        for path_key, path_value in self._get_spec()['paths'].items():
-            for method in self.METHODS:
-                if method in path_value:
-                    if self.OPERATION_ID_KEY in path_value[method]:
-                        if path_value[method][self.OPERATION_ID_KEY] == id:
-                            return path_key
-        return None
-
     def _try_refresh_access_token(self) -> None:
         """Attempts to get a new access token using the refresh token, if needed.
 
@@ -169,14 +136,10 @@ class Preston:
         Returns:
             None
         """
-        if not self.access_token:
-            return
-        if not self._is_access_token_expired():
-            return
-        if not self.refresh_token:
-            raise Exception('Access token is expired and there is no stored refresh token')
-        self.access_token, self.access_expiration = self._get_access_from_refresh()
-        self.access_expiration = time.time() + self.access_expiration
+        if self.refresh_token:
+            if not self.access_token or self._is_access_token_expired():
+                self.access_token, self.access_expiration = self._get_access_from_refresh()
+                self.access_expiration = time.time() + self.access_expiration
 
     def _is_access_token_expired(self) -> bool:
         """Returns true if the stored access token has expired.
@@ -254,6 +217,39 @@ class Preston:
                 'Authorization': f'Bearer {self.access_token}'
             })
 
+    def _get_spec(self) -> dict:
+        """Fetches the OpenAPI spec from the server.
+
+        If the spec has already been fetched, the cached version is returned instead.
+
+        ArgS:
+            None
+
+        Returns:
+            OpenAPI spec data
+        """
+        if self.spec:
+            return self.spec
+        self.spec = requests.get(self.SPEC_URL.format(self.version)).json()
+        return self.spec
+
+    def _get_path_for_op_id(self, id: str) -> Optional[str]:
+        """Searches the spec for a path matching the operation id.
+
+        Args:
+            id: operation id
+
+        Returns:
+            path to the endpoint, or None if not found
+        """
+        for path_key, path_value in self._get_spec()['paths'].items():
+            for method in self.METHODS:
+                if method in path_value:
+                    if self.OPERATION_ID_KEY in path_value[method]:
+                        if path_value[method][self.OPERATION_ID_KEY] == id:
+                            return path_key
+        return None
+
     def _insert_vars(self, path: str, data: dict) -> str:
         """Inserts variables into the ESI URL path.
 
@@ -264,12 +260,13 @@ class Preston:
         Returns:
             path with variables filled
         """
+        data = data.copy()
         while True:
             match = re.search(self.VAR_REPLACE_REGEX, path)
             if not match:
                 return path
             replace_from = match.group(0)
-            replace_with = str(data[match.group(1)])
+            replace_with = str(data.get(match.group(1)))
             path = path.replace(replace_from, replace_with)
 
     def whoami(self) -> dict:
@@ -289,7 +286,7 @@ class Preston:
         self._try_refresh_access_token()
         return self.session.get(self.WHOAMI_URL).json()
 
-    def get_path(self, path: str, data: dict) -> dict:
+    def get_path(self, path: str, data: dict) -> Tuple[dict, dict]:
         """Queries the ESI by an endpoint URL.
 
         This method is not marked "private" as it _can_ be used
@@ -316,6 +313,10 @@ class Preston:
     def get_op(self, id: str, **kwargs: str) -> dict:
         """Queries the ESI by looking up an operation id.
 
+        Endpoints are cached, so calls to this method
+        for the same op and args will return the data
+        from the cache instead of making the API call.
+
         Args:
             id: operation id
             kwargs: data to populate the endpoint's URL variables
@@ -325,3 +326,37 @@ class Preston:
         """
         path = self._get_path_for_op_id(id)
         return self.get_path(path, kwargs)
+
+    def post_path(self, path: str, path_data: Union[dict, None], post_data: Any) -> dict:
+        """Modifies the ESI by an endpoint URL.
+
+        This method is not marked "private" as it _can_ be used
+        by consuming code, but it's probably easier to call the
+        `get_op` method instead.
+
+        Args:
+            path: raw ESI URL path
+            path_data: data to format the path with (can be None)
+            post_data: data to send to ESI
+
+        Returns:
+            ESI data
+        """
+        path = self._insert_vars(path, path_data or {})
+        path = self.BASE_URL + path
+        self._try_refresh_access_token()
+        return self.session.post(path, json=post_data).json()
+
+    def post_op(self, id: str, path_data: Union[dict, None], post_data: Any) -> dict:
+        """Modifies the ESI by looking up an operation id.
+
+        Args:
+            path: raw ESI URL path
+            path_data: data to format the path with (can be None)
+            post_data: data to send to ESI
+
+        Returns:
+            ESI data
+        """
+        path = self._get_path_for_op_id(id)
+        return self.post_path(path, path_data, post_data)

@@ -58,6 +58,8 @@ data = preston.get_op('get_characters_character_id', character_id=91316135)
 
 You should always include a good `user_agent`.
 
+Additionally, a `post_op` method exists, that takes a dictionary (instead of **kwargs) and another parameter; the former is used like above, to satisfy the URL parameters, and the latter is sent to the ESI endpoint as the payloadd.
+
 For #2, there are 2 methods that you'll need, `get_authorize_url` and `authenticate`, and several `__init__` kwargs.
 
 ```python
@@ -94,7 +96,7 @@ an endpoint that requires a specific scope, your app on EVE Devs has that scoped
 
 ### Resuming authentication
 
-If your app uses scopes, it'll return a `refresh_token` alongside the `access_token`. The access token, per usual, only lasts 20 minutes before it expires. In this situation,
+If your app uses scopes, it'll receive a `refresh_token` alongside the `access_token`. The access token, per usual, only lasts 20 minutes before it expires. In this situation,
 the refresh token can be used to get a *new* access token. If your Preston instance has a refresh token, this will be done automatically when the access token expires.
 
 You can also get this refresh token from the Preston instance with `token = preston.refresh_token`. This can be then stored somewhere (securely) and used again later by

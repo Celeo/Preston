@@ -104,13 +104,17 @@ def test_update_access_token_header(sample):
 def test_insert_vars(empty):
     data = dict(foo='bar', bar='baz')
     path = '/foo/bar'
-    assert empty._insert_vars(path, data) == path
+    p = empty._insert_vars(path, data)
+    assert p == path
     path = '/foo/{bar}'
-    assert empty._insert_vars(path, data) == '/foo/baz'
+    p = empty._insert_vars(path, data)
+    assert p == '/foo/baz'
     path = '/{foo}/bar'
-    assert empty._insert_vars(path, data) == '/bar/bar'
+    p = empty._insert_vars(path, data)
+    assert p == '/bar/bar'
     path = '/{foo}/{bar}'
-    assert empty._insert_vars(path, data) == '/bar/baz'
+    p = empty._insert_vars(path, data)
+    assert p == '/bar/baz'
 
 
 def test_whoami_unauth(empty):
