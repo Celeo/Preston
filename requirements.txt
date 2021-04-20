@@ -6,7 +6,7 @@ idna==2.6
 more-itertools==4.1.0
 mypy==0.580
 pluggy==0.6.0
-py==1.5.3
+py==1.10.0
 pytest==3.5.0
 pytest-cov==2.5.1
 requests==2.20.0
