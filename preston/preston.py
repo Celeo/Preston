@@ -40,38 +40,38 @@ class Preston:
     Args:
         kwargs: various configuration options
     """
-    BASE_URL = 'https://esi.tech.ccp.is'
-    SPEC_URL = BASE_URL + '/_{}/swagger.json'
-    OAUTH_URL = 'https://login.eveonline.com/oauth/'
-    TOKEN_URL = OAUTH_URL + 'token'
-    AUTHORIZE_URL = OAUTH_URL + 'authorize'
-    WHOAMI_URL = OAUTH_URL + 'verify'
-    METHODS = ['get', 'post', 'put', 'delete']
-    OPERATION_ID_KEY = 'operationId'
-    VAR_REPLACE_REGEX = r'{(\w+)}'
 
-    def __init__(self, **kwargs: str) -> None:
+    BASE_URL = "https://esi.tech.ccp.is"
+    SPEC_URL = BASE_URL + "/_{}/swagger.json"
+    OAUTH_URL = "https://login.eveonline.com/oauth/"
+    TOKEN_URL = OAUTH_URL + "token"
+    AUTHORIZE_URL = OAUTH_URL + "authorize"
+    WHOAMI_URL = OAUTH_URL + "verify"
+    METHODS = ["get", "post", "put", "delete"]
+    OPERATION_ID_KEY = "operationId"
+    VAR_REPLACE_REGEX = r"{(\w+)}"
+
+    def __init__(self, **kwargs: Any) -> None:
         self.cache = Cache()
         self.spec = None
-        self.version = kwargs.get('version', 'latest')
+        self.version = kwargs.get("version", "latest")
         self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': kwargs.get('user_agent', ''),
-            'Accept': 'application/json'
-        })
-        self.client_id = kwargs.get('client_id')
-        self.client_secret = kwargs.get('client_secret')
-        self.callback_url = kwargs.get('callback_url')
-        self.scope = kwargs.get('scope', '')
-        self.access_token = kwargs.get('access_token')
-        self.access_expiration = kwargs.get('access_expiration')
-        self.refresh_token = kwargs.get('refresh_token')
+        self.session.headers.update(
+            {"User-Agent": kwargs.get("user_agent", ""), "Accept": "application/json"}
+        )
+        self.client_id = kwargs.get("client_id")
+        self.client_secret = kwargs.get("client_secret")
+        self.callback_url = kwargs.get("callback_url")
+        self.scope = kwargs.get("scope", "")
+        self.access_token = kwargs.get("access_token")
+        self.access_expiration = kwargs.get("access_expiration")
+        self.refresh_token = kwargs.get("refresh_token")
         self._kwargs = kwargs
-        if not kwargs.get('no_update_token', False):
+        if not kwargs.get("no_update_token", False):
             self._try_refresh_access_token()
             self._update_access_token_header()
 
-    def copy(self) -> 'Preston':
+    def copy(self) -> "Preston":
         """Creates a copy of this Preston object.
 
         The returned instance is not connected to this, so you can set
@@ -100,13 +100,10 @@ class Preston:
             new access token and expiration time (from now)
         """
         headers = self._get_authorization_headers()
-        data = {
-            'grant_type': 'refresh_token',
-            'refresh_token': self.refresh_token
-        }
+        data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
         r = self.session.post(self.TOKEN_URL, headers=headers, data=data)
         response_data = r.json()
-        return (response_data['access_token'], response_data['expires_in'])
+        return (response_data["access_token"], response_data["expires_in"])
 
     def _get_authorization_headers(self) -> dict:
         """Constructs and returns the Authorization header for the client app.
@@ -117,10 +114,12 @@ class Preston:
         Returns:
             header dict for communicating with the authorization endpoints
         """
-        auth = base64.encodebytes(bytes(f"{self.client_id}:{self.client_secret}", "latin-1")).decode("latin-1")
-        auth = auth.replace('\n', '').replace(' ', '')
-        auth = 'Basic {}'.format(auth)
-        headers = {'Authorization': auth}
+        auth = base64.encodebytes(
+            bytes(f"{self.client_id}:{self.client_secret}", "latin-1")
+        ).decode("latin-1")
+        auth = auth.replace("\n", "").replace(" ", "")
+        auth = "Basic {}".format(auth)
+        headers = {"Authorization": auth}
         return headers
 
     def _try_refresh_access_token(self) -> None:
@@ -138,7 +137,10 @@ class Preston:
         """
         if self.refresh_token:
             if not self.access_token or self._is_access_token_expired():
-                self.access_token, self.access_expiration = self._get_access_from_refresh()
+                (
+                    self.access_token,
+                    self.access_expiration,
+                ) = self._get_access_from_refresh()
                 self.access_expiration = time.time() + self.access_expiration
 
     def _is_access_token_expired(self) -> bool:
@@ -166,11 +168,11 @@ class Preston:
             URL
         """
         return (
-            f'{self.AUTHORIZE_URL}?response_type=code&redirect_uri={self.callback_url}'
-            f'&client_id={self.client_id}&scope={self.scope}'
+            f"{self.AUTHORIZE_URL}?response_type=code&redirect_uri={self.callback_url}"
+            f"&client_id={self.client_id}&scope={self.scope}"
         )
 
-    def authenticate(self, code: str) -> 'Preston':
+    def authenticate(self, code: str) -> "Preston":
         """Authenticates using the code from the EVE SSO.
 
         A new Preston object is returned; this object is not modified.
@@ -186,18 +188,19 @@ class Preston:
             new Preston, authenticated
         """
         headers = self._get_authorization_headers()
-        data = {
-            'grant_type': 'authorization_code',
-            'code': code
-        }
+        data = {"grant_type": "authorization_code", "code": code}
         r = self.session.post(self.TOKEN_URL, headers=headers, data=data)
         if not r.status_code == 200:
-            raise Exception(f'Could not authenticate, got repsonse code {r.status_code}')
+            raise Exception(
+                f"Could not authenticate, got repsonse code {r.status_code}"
+            )
         new_kwargs = dict(self._kwargs)
         response_data = r.json()
-        new_kwargs['access_token'] = response_data['access_token']
-        new_kwargs['access_expiration'] = time.time() + float(response_data['expires_in'])
-        new_kwargs['refresh_token'] = response_data['refresh_token']
+        new_kwargs["access_token"] = response_data["access_token"]
+        new_kwargs["access_expiration"] = time.time() + float(
+            response_data["expires_in"]
+        )
+        new_kwargs["refresh_token"] = response_data["refresh_token"]
         return Preston(**new_kwargs)
 
     def _update_access_token_header(self) -> None:
@@ -213,9 +216,9 @@ class Preston:
             None
         """
         if self.access_token:
-            self.session.headers.update({
-                'Authorization': f'Bearer {self.access_token}'
-            })
+            self.session.headers.update(
+                {"Authorization": f"Bearer {self.access_token}"}
+            )
 
     def _get_spec(self) -> dict:
         """Fetches the OpenAPI spec from the server.
@@ -242,7 +245,7 @@ class Preston:
         Returns:
             path to the endpoint, or None if not found
         """
-        for path_key, path_value in self._get_spec()['paths'].items():
+        for path_key, path_value in self._get_spec()["paths"].items():
             for method in self.METHODS:
                 if method in path_value:
                     if self.OPERATION_ID_KEY in path_value[method]:
@@ -327,7 +330,9 @@ class Preston:
         path = self._get_path_for_op_id(id)
         return self.get_path(path, kwargs)
 
-    def post_path(self, path: str, path_data: Union[dict, None], post_data: Any) -> dict:
+    def post_path(
+        self, path: str, path_data: Union[dict, None], post_data: Any
+    ) -> dict:
         """Modifies the ESI by an endpoint URL.
 
         This method is not marked "private" as it _can_ be used

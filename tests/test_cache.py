@@ -18,25 +18,47 @@ def test_initialization_size(cache):
 
 def test_expiration(cache):
     assert cache._get_expiration({}) == 0
-    assert(cache._get_expiration({
-        'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
-    }) == 1)
-    assert(cache._get_expiration({
-        'expires': (datetime.utcnow() + timedelta(seconds=100)).strftime('%a, %d %b %Y %H:%M:%S GMT')
-    }) == 100)
-    assert(cache._get_expiration({
-        'expires': (datetime.utcnow() + timedelta(seconds=1234576890)).strftime('%a, %d %b %Y %H:%M:%S GMT')
-    }) == 1234576890)
+    assert (
+        cache._get_expiration(
+            {
+                "expires": (datetime.utcnow() + timedelta(seconds=1)).strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT"
+                )
+            }
+        )
+        == 1
+    )
+    assert (
+        cache._get_expiration(
+            {
+                "expires": (datetime.utcnow() + timedelta(seconds=100)).strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT"
+                )
+            }
+        )
+        == 100
+    )
+    assert (
+        cache._get_expiration(
+            {
+                "expires": (datetime.utcnow() + timedelta(seconds=1234576890)).strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT"
+                )
+            }
+        )
+        == 1234576890
+    )
 
 
 def test_add_verify_page(cache):
     class Response:
-
         def __init__(self, url, data=None, headers=None):
             self.url = url
             self.data = data or {}
             self.headers = {
-                'expires': (datetime.utcnow() + timedelta(seconds=300)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+                "expires": (datetime.utcnow() + timedelta(seconds=300)).strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT"
+                )
             }
             if headers:
                 self.headers.update(headers)
@@ -45,21 +67,27 @@ def test_add_verify_page(cache):
             return self.data
 
     cache.data.clear()
-    r = Response('')
+    r = Response("")
     cache.set(r)
     assert len(cache) == 1
-    assert cache.check('') == {}
+    assert cache.check("") == {}
 
-    r = Response(Preston.BASE_URL + '/test', {'foo': 'bar'})
+    r = Response(Preston.BASE_URL + "/test", {"foo": "bar"})
     cache.set(r)
     assert len(cache) == 2
-    assert cache.check(Preston.BASE_URL + '/test') == {'foo': 'bar'}
+    assert cache.check(Preston.BASE_URL + "/test") == {"foo": "bar"}
 
-    r = Response(Preston.BASE_URL + '/test2', {}, {
-        'expires': (datetime.utcnow() + timedelta(seconds=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
-    })
+    r = Response(
+        Preston.BASE_URL + "/test2",
+        {},
+        {
+            "expires": (datetime.utcnow() + timedelta(seconds=1)).strftime(
+                "%a, %d %b %Y %H:%M:%S GMT"
+            )
+        },
+    )
     cache.set(r)
     assert len(cache) == 3
     sleep(1)
-    assert not cache.check(Preston.BASE_URL + '/test2')
+    assert not cache.check(Preston.BASE_URL + "/test2")
     assert len(cache) == 2

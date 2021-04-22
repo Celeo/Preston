@@ -3,9 +3,10 @@ from datetime import datetime
 import time
 import math
 
+from requests import Response
+
 
 class Cache:
-
     def __init__(self):
         """Cache class.
 
@@ -29,14 +30,14 @@ class Cache:
         Returns:
             value of seconds from now the data expires
         """
-        expiration_str = headers.get('expires')
+        expiration_str = headers.get("expires")
         if not expiration_str:
             return 0
-        expiration = datetime.strptime(expiration_str, '%a, %d %b %Y %H:%M:%S %Z')
+        expiration = datetime.strptime(expiration_str, "%a, %d %b %Y %H:%M:%S %Z")
         delta = (expiration - datetime.utcnow()).total_seconds()
         return math.ceil(abs(delta))
 
-    def set(self, response: 'requests.Response') -> None:
+    def set(self, response: Response) -> None:
         """Adds a response to the cache.
 
         Args:
@@ -46,11 +47,10 @@ class Cache:
             None
         """
         self.data[response.url] = SavedEndpoint(
-            response.json(),
-            self._get_expiration(response.headers)
+            response.json(), self._get_expiration(response.headers)
         )
 
-    def _check_expiration(self, url: str, data: 'SavedEndpoint') -> 'SavedEndpoint':
+    def _check_expiration(self, url: str, data: "SavedEndpoint") -> "SavedEndpoint":
         """Checks the expiration time for data for a url.
 
         If the data has expired, it is deleted from the cache.
@@ -99,7 +99,6 @@ class Cache:
 
 
 class SavedEndpoint:
-
     def __init__(self, data: dict, expires_in: float) -> None:
         """SavedEndpoint class.
 
