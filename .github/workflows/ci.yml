@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: |
+      !(github.event_name == 'push' && contains(github.event.head_commit.message, '[skip ci]'))
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.6"
+      - name: Install poetry
+        run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install dependencies
+        run: $HOME/.poetry/bin/poetry install
+      - name: Run tests
+        run: $HOME/.poetry/bin/poetry run pytest --cov=preston --cov-report=xml
+      - name: Upload coverage
+        run: bash <(curl -s https://codecov.io/bash)
