@@ -117,7 +117,7 @@ class Preston:
         Returns:
             header dict for communicating with the authorization endpoints
         """
-        auth = base64.encodestring((self.client_id + ':' + self.client_secret).encode('latin-1')).decode('latin-1')
+        auth = base64.encodebytes(bytes(f"{self.client_id}:{self.client_secret}", "latin-1")).decode("latin-1")
         auth = auth.replace('\n', '').replace(' ', '')
         auth = 'Basic {}'.format(auth)
         headers = {'Authorization': auth}

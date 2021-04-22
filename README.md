@@ -1,15 +1,18 @@
 # Preston
 
-[![Build Status](https://travis-ci.org/Celeo/Preston.svg?branch=master)](https://travis-ci.org/Celeo/Preston)
-[![codecov](https://codecov.io/gh/Celeo/Preston/branch/master/graph/badge.svg)](https://codecov.io/gh/Celeo/Preston)
+[![CI](https://github.com/Celeo/preston/workflows/CI/badge.svg?branch=master)](https://github.com/Celeo/preston/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/Celeo/preston/branch/master/graph/badge.svg?token=2R9RY3P229)](https://codecov.io/gh/Celeo/preston)
+[![Python version](https://img.shields.io/badge/Python-3.7+-blue)](https://www.python.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Preston is a Python library for accessing EVE Online's ESI API.
 
 ## Quick links
 
-* EVE ESI: https://esi.tech.ccp.is/
-* EVE third-party documentation: http://eveonline-third-party-documentation.readthedocs.io
-* EVE developers: https://developers.eveonline.com/
+* EVE ESI: <https://esi.tech.ccp.is/>
+* EVE third-party documentation: <http://eveonline-third-party-documentation.readthedocs.io>
+* EVE developers: <https://developers.eveonline.com/>
 
 ## Installation
 
@@ -117,6 +120,36 @@ Preston will take the refresh token and attempt to get a new access token from i
 
 On that note, you can also pass the `access_token` to a new Preston instance, but there's less of a use case for that, as either you have an app with scopes, yielding a refresh token,
 or an authentication-only app where you only use the access token to verify identity and some basic information before moving on.
+
+## Developing
+
+### Building
+
+### Requirements
+
+* Git
+* Poetry
+* Python 3.6+
+
+### Steps
+
+```sh
+git clone https://github.com/Celeo/preston
+cd preston
+poetry install
+```
+
+### Running tests
+
+| | |
+| --- | --- |
+| No coverage | `poetry run pytest`
+| Coverage printout | `poetry run pytest --cov=preston` |
+| Coverage report | `poetry run pytest --cov=preston --cov-report=html` |
+
+## License
+
+Licensed under MIT ([LICENSE](LICENSE)).
 
 ## Contributing
 
