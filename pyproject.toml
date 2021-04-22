@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "preston"
+version = "4.1.0"
+description = "EVE ESI API access tool"
+authors = ["Celeo <mattboulanger@fastmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/Celeo/Preston"
+repository = "https://github.com/Celeo/Preston"
+keywords = [
+  "eve online",
+  "api",
+  "esi"
+]
+classifiers = [
+  "Environment :: Console",
+  "Environment :: Web Environment",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Libraries"
+]
+packages = [
+  { include = "preston" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+requests = "2.20.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.3"
+pytest-cov = "^2.11.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

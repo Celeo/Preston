@@ -15,16 +15,16 @@ Preston is a Python library for accessing EVE Online's ESI API.
 
 From [pip](https://pip.pypa.io/en/stable/):
 
-```bash
+```sh
 pip install preston
 ```
 
-From GitHub:
+From GitHub (you'll need [poetry](https://python-poetry.org/)):
 
-```bash
-git clone https://github.com/Celeo/Preston.git
-cd Preston
-python setup.py install
+```sh
+git clone https://github.com/Celeo/preston.git
+cd preston
+poetry install
 ```
 
 ## Initialization
