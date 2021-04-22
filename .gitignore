@@ -6,6 +6,6 @@ Preston.egg-info
 dist
 .cache/
 .coverage
-.vscode
-.mypy_cache
+.vscode/settings.json
 .pytest_cache
+htmlcov
