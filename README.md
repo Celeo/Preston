@@ -22,14 +22,6 @@ From [pip](https://pip.pypa.io/en/stable/):
 pip install preston
 ```
 
-From GitHub (you'll need [poetry](https://python-poetry.org/)):
-
-```sh
-git clone https://github.com/Celeo/preston.git
-cd preston
-poetry install
-```
-
 ## Initialization
 
 ```python
