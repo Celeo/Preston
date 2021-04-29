@@ -11,7 +11,6 @@ Preston is a Python library for accessing EVE Online's ESI API.
 ## Quick links
 
 * EVE ESI: <https://esi.tech.ccp.is/>
-* EVE third-party documentation: <http://eveonline-third-party-documentation.readthedocs.io>
 * EVE developers: <https://developers.eveonline.com/>
 
 ## Installation
