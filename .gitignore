@@ -9,3 +9,4 @@ dist
 .vscode/settings.json
 .pytest_cache
 htmlcov
+coverage.xml
