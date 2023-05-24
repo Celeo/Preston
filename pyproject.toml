@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "preston"
-version = "4.1.0"
+version = "4.1.1"
 description = "EVE ESI API access tool"
 authors = ["Celeo <mattboulanger@fastmail.com>"]
 license = "MIT"
@@ -24,8 +24,8 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
-requests = "2.20.0"
+python = "^3.7"
+requests = "2.31.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.3"
