@@ -23,8 +23,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
       - name: Install dependencies
-        run: $HOME/.poetry/bin/poetry install
+        run:  /home/runner/.local/bin/poetry install
       - name: Run tests
-        run: $HOME/.poetry/bin/poetry run pytest --cov=preston --cov-report=xml
+        run:  /home/runner/.local/bin/poetry run pytest --cov=preston --cov-report=xml
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash)
