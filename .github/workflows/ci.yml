@@ -10,21 +10,27 @@ jobs:
     if: |
       !(github.event_name == 'push' && contains(github.event.head_commit.message, '[skip ci]'))
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.7"
       - name: Install Poetry
         uses: snok/install-poetry@v1
-      - uses: actions/cache@v2
         with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Load cached venv
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}
       - name: Install dependencies
-        run:  /home/runner/.local/bin/poetry install
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
       - name: Run tests
-        run:  /home/runner/.local/bin/poetry run pytest --cov=preston --cov-report=xml
+        run: |
+          source .venv/bin/activate
+          pytest --cov=preston --cov-report=xml
       - name: Upload coverage
         run: bash <(curl -s https://codecov.io/bash)
