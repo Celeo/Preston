@@ -41,7 +41,7 @@ class Preston:
         kwargs: various configuration options
     """
 
-    BASE_URL = "https://esi.tech.ccp.is"
+    BASE_URL = "https://esi.evetech.net"
     SPEC_URL = BASE_URL + "/_{}/swagger.json"
     OAUTH_URL = "https://login.eveonline.com/oauth/"
     TOKEN_URL = OAUTH_URL + "token"
