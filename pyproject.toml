@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "preston"
-version = "4.1.1"
+version = "4.2.0"
 description = "EVE ESI API access tool"
 authors = ["Celeo <mattboulanger@fastmail.com>"]
 license = "MIT"
