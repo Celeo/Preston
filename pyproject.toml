@@ -24,7 +24,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 requests = "2.31.0"
 
 [tool.poetry.dev-dependencies]
