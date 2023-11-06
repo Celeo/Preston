@@ -10,7 +10,7 @@ class Cache:
     def __init__(self):
         """Cache class.
 
-        The cache is desgined to respect the caching rules of ESI as to
+        The cache is designed to respect the caching rules of ESI as to
         not request a page more often than it is updated by the server.
 
         Args:

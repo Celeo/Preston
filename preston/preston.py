@@ -192,7 +192,7 @@ class Preston:
         r = self.session.post(self.TOKEN_URL, headers=headers, data=data)
         if not r.status_code == 200:
             raise Exception(
-                f"Could not authenticate, got repsonse code {r.status_code}"
+                f"Could not authenticate, got response code {r.status_code}"
             )
         new_kwargs = dict(self._kwargs)
         response_data = r.json()
