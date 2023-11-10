@@ -14,6 +14,6 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
-      - uses: snok/install-poetry@v2
+      - uses: abatilo/actions-poetry@v2
       - run: poetry run pytest --cov=preston --cov-report=xml
       - run: bash <(curl -s https://codecov.io/bash)
