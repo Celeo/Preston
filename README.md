@@ -144,4 +144,4 @@ Licensed under MIT ([LICENSE](LICENSE)).
 
 ## Contributing
 
-PRs are welcome. Please follow PEP8 (I'm lenient on E501) and use [Google-style docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
+PRs are welcome. Please follow PEP8 (I'm lenient on E501) and use [Google-style docstrings](https://www.sphinx-doc.org/en/master/usage/extensions/example_google.html#example-google).
