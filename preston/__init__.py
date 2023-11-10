@@ -1,4 +1,4 @@
-from .preston import Preston
+from .preston import Preston  # noqa
 
 
 __author__ = "Matt Boulanger"
