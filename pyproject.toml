@@ -7,32 +7,24 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/Celeo/Preston"
 repository = "https://github.com/Celeo/Preston"
-keywords = [
-  "eve online",
-  "api",
-  "esi"
-]
+keywords = ["eve online", "eve", "esi"]
 classifiers = [
   "Environment :: Console",
   "Environment :: Web Environment",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Topic :: Software Development :: Libraries"
+  "Topic :: Software Development :: Libraries",
 ]
-packages = [
-  { include = "preston" }
-]
+packages = [{ include = "preston" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "2.31.0"
 
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.3"
-pytest-cov = "^2.11.1"
-
 [tool.poetry.group.dev.dependencies]
 black = "^23.11.0"
+pytest = "^7.4.3"
+pytest-cov = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
