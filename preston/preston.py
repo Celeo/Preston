@@ -1,5 +1,4 @@
 import base64
-from dataclasses import dataclass
 import re
 import time
 from typing import Optional, Tuple, Any, Union
@@ -226,7 +225,7 @@ class Preston:
 
         If the spec has already been fetched, the cached version is returned instead.
 
-        ArgS:
+        Args:
             None
 
         Returns:
@@ -244,7 +243,7 @@ class Preston:
             id: operation id
 
         Returns:
-            path to the endpoint, or None if not found
+            path to the endpoint, or `None` if not found
         """
         for path_key, path_value in self._get_spec()["paths"].items():
             for method in self.METHODS:
@@ -324,9 +323,12 @@ class Preston:
     def get_op(self, id: str, **kwargs: str) -> dict:
         """Queries the ESI by looking up an operation id.
 
-        Endpoints are cached, so calls to this method
-        for the same op and args will return the data
-        from the cache instead of making the API call.
+        Endpoints are cached, so calls to this method for the
+        same op and args will return the data from the cache
+        instead of making the API call.
+
+        Passed kwargs will first supply parameters in the URL,
+        and then unused items will be used as query params.
 
         Args:
             id: operation id
