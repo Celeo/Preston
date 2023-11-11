@@ -1,4 +1,5 @@
 import base64
+from dataclasses import dataclass
 import re
 import time
 from typing import Optional, Tuple, Any, Union
@@ -253,7 +254,7 @@ class Preston:
                             return path_key
         return None
 
-    def _insert_vars(self, path: str, data: dict) -> str:
+    def _insert_vars(self, path: str, data: dict) -> [str, dict]:
         """Inserts variables into the ESI URL path.
 
         Args:
@@ -261,15 +262,16 @@ class Preston:
             data: data to insert into the URL
 
         Returns:
-            path with variables filled
+            tuple of the path with variables filled, and
+            and remaining, unused dict items
         """
         data = data.copy()
         while True:
             match = re.search(self.VAR_REPLACE_REGEX, path)
             if not match:
-                return path
+                return path, data
             replace_from = match.group(0)
-            replace_with = str(data.get(match.group(1)))
+            replace_with = str(data.pop(match.group(1), ""))
             path = path.replace(replace_from, replace_with)
 
     def whoami(self) -> dict:
@@ -303,13 +305,19 @@ class Preston:
         Returns:
             ESI data
         """
-        path = self._insert_vars(path, data)
-        path = self.BASE_URL + path
-        data = self.cache.check(path)
-        if data:
-            return data
+        var_insert = self._insert_vars(path, data)
+        path = var_insert[0]
+        target_url = self.BASE_URL + path
+        if len(var_insert[1]) > 0:
+            req = requests.models.PreparedRequest()
+            req.prepare_url(target_url, var_insert[1])
+            target_url = req.url
+
+        cached_data = self.cache.check(target_url)
+        if cached_data:
+            return cached_data
         self._try_refresh_access_token()
-        r = self.session.get(path)
+        r = self.session.get(target_url)
         self.cache.set(r)
         return r.json()
 
@@ -347,7 +355,7 @@ class Preston:
         Returns:
             ESI data
         """
-        path = self._insert_vars(path, path_data or {})
+        path = self._insert_vars(path, path_data or {})[0]
         path = self.BASE_URL + path
         self._try_refresh_access_token()
         return self.session.post(path, json=post_data).json()

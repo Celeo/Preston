@@ -91,19 +91,23 @@ def test_update_access_token_header(sample):
 
 def test_insert_vars(empty):
     data = dict(foo="bar", bar="baz")
-    path = "/foo/bar"
-    p = empty._insert_vars(path, data)
-    assert p == path
-    path = "/foo/{bar}"
-    p = empty._insert_vars(path, data)
-    assert p == "/foo/baz"
-    path = "/{foo}/bar"
-    p = empty._insert_vars(path, data)
-    assert p == "/bar/bar"
-    path = "/{foo}/{bar}"
-    p = empty._insert_vars(path, data)
-    assert p == "/bar/baz"
+    test_cases = [
+        ["/foo/bar", "/foo/bar", data],
+        ["/foo/{bar}", "/foo/baz", {"foo": "bar"}],
+        ["/{foo}/bar", "/bar/bar", {"bar": "baz"}],
+        ["/{foo}/{bar}", "/bar/baz", {}],
+    ]
+    for case in test_cases:
+        res = empty._insert_vars(case[0], data)
+        assert res[0] == case[1]
+        assert res[1] == case[2]
 
 
-def test_whoami_unauth(empty):
+def test_insert_vars_missing(empty):
+    res = empty._insert_vars("/foo/{bar}", {})
+    assert res[0] == "/foo/"
+    assert res[1] == {}
+
+
+def test_whoami_unauthorized(empty):
     assert empty.whoami() == {}
