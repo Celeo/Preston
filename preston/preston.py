@@ -316,9 +316,11 @@ class Preston:
         if cached_data:
             return cached_data
         self._try_refresh_access_token()
-        r = self.session.get(target_url)
-        self.cache.set(r)
-        return r.json()
+        resp = self.session.get(target_url)
+        self.cache.set(resp)
+        if resp.text:
+            return resp.json()
+        return None
 
     def get_op(self, id: str, **kwargs: str) -> dict:
         """Queries the ESI by looking up an operation id.
@@ -357,10 +359,19 @@ class Preston:
         Returns:
             ESI data
         """
-        path = self._insert_vars(path, path_data or {})[0]
-        path = self.BASE_URL + path
+        var_insert = self._insert_vars(path, path_data)
+        path = var_insert[0]
+        target_url = self.BASE_URL + path
+        if len(var_insert[1]) > 0:
+            req = requests.models.PreparedRequest()
+            req.prepare_url(target_url, var_insert[1])
+            target_url = req.url
+
         self._try_refresh_access_token()
-        return self.session.post(path, json=post_data).json()
+        resp = self.session.post(target_url, json=post_data)
+        if resp.text:
+            return resp.json()
+        return None
 
     def post_op(self, id: str, path_data: Union[dict, None], post_data: Any) -> dict:
         """Modifies the ESI by looking up an operation id.
