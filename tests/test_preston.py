@@ -81,7 +81,10 @@ def test_is_access_token_expired(empty):
 def test_get_authorize_url(sample):
     expected = "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=4&client_id=2&scope=5"
     assert sample.get_authorize_url() == expected
-
+    sample_multiple_scopes = sample
+    sample_multiple_scopes.scope = 'scope1 scope2'
+    expected_multiple_scope = "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=4&client_id=2&scope=scope1%20scope2"
+    assert sample_multiple_scopes.get_authorize_url() == expected_multiple_scope
 
 def test_update_access_token_header(sample):
     assert "Authorization" not in sample.session.headers

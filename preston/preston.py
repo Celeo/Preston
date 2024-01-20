@@ -169,7 +169,7 @@ class Preston:
         """
         return (
             f"{self.AUTHORIZE_URL}?response_type=code&redirect_uri={self.callback_url}"
-            f"&client_id={self.client_id}&scope={self.scope}"
+            f"&client_id={self.client_id}&scope={self.scope.replace(' ', '%20')}"
         )
 
     def authenticate(self, code: str) -> "Preston":
