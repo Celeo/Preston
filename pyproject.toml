@@ -19,7 +19,7 @@ packages = [{ include = "preston" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-requests = "2.31.0"
+requests = "2.32.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
