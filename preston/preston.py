@@ -253,7 +253,7 @@ class Preston:
                             return path_key
         return None
 
-    def _insert_vars(self, path: str, data: dict) -> [str, dict]:
+    def _insert_vars(self, path: str, data: dict) -> tuple[str, dict]:
         """Inserts variables into the ESI URL path.
 
         Args:
