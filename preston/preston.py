@@ -66,6 +66,7 @@ class Preston:
         self.access_token = kwargs.get("access_token")
         self.access_expiration = kwargs.get("access_expiration")
         self.refresh_token = kwargs.get("refresh_token")
+        self.stored_headers = []
         self._kwargs = kwargs
         if not kwargs.get("no_update_token", False):
             self._try_refresh_access_token()
@@ -318,6 +319,7 @@ class Preston:
         self._try_refresh_access_token()
         resp = self.session.get(target_url)
         self.cache.set(resp)
+        self.stored_headers.insert(0, resp.headers)
         if resp.text:
             return resp.json()
         return None
