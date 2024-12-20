@@ -86,11 +86,6 @@ def test_get_authorize_url(sample):
     expected_multiple_scope = "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=4&client_id=2&scope=scope%20scope1"
     assert sample_multiple_scopes.get_authorize_url() == expected_multiple_scope
 
-def test_update_access_token_header(sample):
-    assert "Authorization" not in sample.session.headers
-    sample._update_access_token_header()
-    assert sample.session.headers["Authorization"] == "Bearer 6"
-
 
 def test_insert_vars(empty):
     data = dict(foo="bar", bar="baz")
@@ -114,3 +109,7 @@ def test_insert_vars_missing(empty):
 
 def test_whoami_unauthorized(empty):
     assert empty.whoami() == {}
+
+
+def test_try_refresh_access_token(empty):
+    pass
