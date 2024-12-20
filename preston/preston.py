@@ -70,7 +70,6 @@ class Preston:
         self._kwargs = kwargs
         if not kwargs.get("no_update_token", False):
             self._try_refresh_access_token()
-            self._update_access_token_header()
 
     def copy(self) -> "Preston":
         """Creates a copy of this Preston object.
@@ -130,6 +129,8 @@ class Preston:
         then the refresh token is in the API call to get a new access token. If
         successful, this instance is modified in-place with that new access token.
 
+        Also updates the `requests` session with the new header.
+
         Args:
             None
 
@@ -143,6 +144,9 @@ class Preston:
                     self.access_expiration,
                 ) = self._get_access_from_refresh()
                 self.access_expiration = time.time() + self.access_expiration
+                self.session.headers.update(
+                    {"Authorization": f"Bearer {self.access_token}"}
+                )
 
     def _is_access_token_expired(self) -> bool:
         """Returns true if the stored access token has expired.
@@ -203,23 +207,6 @@ class Preston:
         )
         new_kwargs["refresh_token"] = response_data["refresh_token"]
         return Preston(**new_kwargs)
-
-    def _update_access_token_header(self) -> None:
-        """Updates the requests session with the access token header.
-
-        This method does nothing if this instance does not have a
-        stored access token.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        if self.access_token:
-            self.session.headers.update(
-                {"Authorization": f"Bearer {self.access_token}"}
-            )
 
     def _get_spec(self) -> dict:
         """Fetches the OpenAPI spec from the server.
