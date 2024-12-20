@@ -111,5 +111,17 @@ def test_whoami_unauthorized(empty):
     assert empty.whoami() == {}
 
 
-def test_try_refresh_access_token(empty):
-    pass
+def test_try_refresh_access_token_empty(empty):
+    empty._try_refresh_access_token()
+    assert empty.refresh_token is None
+    assert empty.access_token is None
+
+
+def test_try_refresh_access_token_has(empty):
+    empty.refresh_token = 'abc123'
+    empty.access_token = None
+    empty._is_access_token_expired = lambda: False
+    empty.access_expiration = 1.0
+    empty._get_access_from_refresh = lambda: ('def', 456)
+    empty._try_refresh_access_token()
+    assert empty.access_token == 'def'
