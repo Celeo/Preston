@@ -388,3 +388,44 @@ class Preston:
         """
         path = self._get_path_for_op_id(id)
         return self.post_path(path, path_data, post_data)
+
+    def delete_path(self, path: str, path_data: Union[dict, None]) -> dict:
+        """Deletes a resource in the ESI by an endpoint URL.
+
+        This method is not marked "private" as it _can_ be used
+        by consuming code, but it's probably easier to call the
+        `delete_op` method instead.
+
+        Args:
+            path: raw ESI URL path
+            path_data: data to format the path with (can be None)
+
+        Returns:
+            ESI response data
+        """
+        var_insert = self._insert_vars(path, path_data)
+        path = var_insert[0]
+        target_url = self.BASE_URL + path
+        if len(var_insert[1]) > 0:
+            req = requests.models.PreparedRequest()
+            req.prepare_url(target_url, var_insert[1])
+            target_url = req.url
+
+        self._try_refresh_access_token()
+        resp = self.session.delete(target_url)
+        if resp.text:
+            return resp.json()
+        return None
+
+    def delete_op(self, id: str, path_data: Union[dict, None]) -> dict:
+        """Deletes a resource in the ESI by looking up an operation id.
+
+        Args:
+            id: operation id
+            path_data: data to format the path with (can be None)
+
+        Returns:
+            ESI response data
+        """
+        path = self._get_path_for_op_id(id)
+        return self.delete_path(path, path_data)
