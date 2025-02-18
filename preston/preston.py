@@ -144,9 +144,11 @@ class Preston:
                     self.access_expiration,
                 ) = self._get_access_from_refresh()
                 self.access_expiration = time.time() + self.access_expiration
-                self.session.headers.update(
-                    {"Authorization": f"Bearer {self.access_token}"}
-                )
+
+        if self.access_token:
+            self.session.headers.update(
+                {"Authorization": f"Bearer {self.access_token}"}
+            )
 
     def _is_access_token_expired(self) -> bool:
         """Returns true if the stored access token has expired.
