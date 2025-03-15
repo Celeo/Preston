@@ -119,7 +119,7 @@ or an authentication-only app where you only use the access token to verify iden
 ### Requirements
 
 * Git
-* Poetry
+* uv
 * Python 3.8+
 
 ### Steps
@@ -127,16 +127,16 @@ or an authentication-only app where you only use the access token to verify iden
 ```sh
 git clone https://github.com/Celeo/preston
 cd preston
-poetry install
+uv sync
 ```
 
 ### Running tests
 
 | | |
 | --- | --- |
-| No coverage | `poetry run pytest`
-| Coverage printout | `poetry run pytest --cov=preston` |
-| Coverage report | `poetry run pytest --cov=preston --cov-report=html` |
+| No coverage | `uv run pytest`
+| Coverage printout | `uv run pytest --cov=preston` |
+| Coverage report | `uv run pytest --cov=preston --cov-report=html` |
 
 ## License
 
