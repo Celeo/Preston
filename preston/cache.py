@@ -1,7 +1,7 @@
-from typing import Optional
-from datetime import datetime
-import time
+from datetime import datetime, UTC
 import math
+import time
+from typing import Optional
 
 from requests import Response
 
@@ -33,8 +33,8 @@ class Cache:
         expiration_str = headers.get("expires")
         if not expiration_str:
             return 0
-        expiration = datetime.strptime(expiration_str, "%a, %d %b %Y %H:%M:%S %Z")
-        delta = (expiration - datetime.utcnow()).total_seconds()
+        expiration = datetime.strptime(expiration_str, "%a, %d %b %Y %H:%M:%S %Z").replace(tzinfo=UTC)
+        delta = (expiration - datetime.now(UTC)).total_seconds()
         return math.ceil(abs(delta))
 
     def set(self, response: Response) -> None:

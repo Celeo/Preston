@@ -1,5 +1,5 @@
 from time import sleep
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import pytest
 
@@ -21,7 +21,7 @@ def test_expiration(cache):
     assert (
         cache._get_expiration(
             {
-                "expires": (datetime.utcnow() + timedelta(seconds=1)).strftime(
+                "expires": (datetime.now(UTC) + timedelta(seconds=1)).strftime(
                     "%a, %d %b %Y %H:%M:%S GMT"
                 )
             }
@@ -31,7 +31,7 @@ def test_expiration(cache):
     assert (
         cache._get_expiration(
             {
-                "expires": (datetime.utcnow() + timedelta(seconds=100)).strftime(
+                "expires": (datetime.now(UTC) + timedelta(seconds=100)).strftime(
                     "%a, %d %b %Y %H:%M:%S GMT"
                 )
             }
@@ -41,7 +41,7 @@ def test_expiration(cache):
     assert (
         cache._get_expiration(
             {
-                "expires": (datetime.utcnow() + timedelta(seconds=1234576890)).strftime(
+                "expires": (datetime.now(UTC) + timedelta(seconds=1234576890)).strftime(
                     "%a, %d %b %Y %H:%M:%S GMT"
                 )
             }
@@ -56,7 +56,7 @@ def test_add_verify_page(cache):
             self.url = url
             self.data = data or {}
             self.headers = {
-                "expires": (datetime.utcnow() + timedelta(seconds=300)).strftime(
+                "expires": (datetime.now(UTC) + timedelta(seconds=300)).strftime(
                     "%a, %d %b %Y %H:%M:%S GMT"
                 )
             }
@@ -81,7 +81,7 @@ def test_add_verify_page(cache):
         Preston.BASE_URL + "/test2",
         {},
         {
-            "expires": (datetime.utcnow() + timedelta(seconds=1)).strftime(
+            "expires": (datetime.now(UTC) + timedelta(seconds=1)).strftime(
                 "%a, %d %b %Y %H:%M:%S GMT"
             )
         },
