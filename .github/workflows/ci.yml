@@ -15,7 +15,8 @@ jobs:
         with:
           python-version: "3.8"
       - uses: abatilo/actions-poetry@v2
-      - run: poetry install
-      - run: poetry run ruff check .
-      - run: poetry run pytest --cov=preston --cov-report=xml
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install
+      - run: uv run ruff check .
+      - run: uv run pytest --cov=preston --cov-report=xml
       - run: bash <(curl -s https://codecov.io/bash)
