@@ -19,4 +19,4 @@ jobs:
         with:
             files: coverage.xml
         env:
-          ${{ secrets.CODECOV_TOKEN }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
