@@ -1,31 +1,36 @@
-[tool.poetry]
+[project]
 name = "preston"
-version = "4.9.0"
+version = "4.10.0"
 description = "EVE ESI API access tool"
-authors = ["Celeo <mattboulanger@fastmail.com>"]
-license = "MIT"
+authors = [
+    { name = "Celeo", email = "mattboulanger@fastmail.com" }
+]
+license = { text = "MIT" }
 readme = "README.md"
+keywords = [
+    "eve online",
+    "eve",
+    "esi",
+]
+classifiers = [
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries",
+]
+requires-python = "<4.0,>=3.8"
+dependencies = [
+    "requests==2.32.0",
+]
+
+[project.urls]
 homepage = "https://github.com/Celeo/Preston"
 repository = "https://github.com/Celeo/Preston"
-keywords = ["eve online", "eve", "esi"]
-classifiers = [
-  "Environment :: Console",
-  "Environment :: Web Environment",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Topic :: Software Development :: Libraries",
+
+[dependency-groups]
+dev = [
+    "pytest<8.0.0,>=7.4.3",
+    "pytest-cov<5.0.0,>=4.1.0",
+    "ruff<1.0.0,>=0.1.5",
 ]
-packages = [{ include = "preston" }]
-
-[tool.poetry.dependencies]
-python = "^3.8"
-requests = "2.32.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.3"
-pytest-cov = "^4.1.0"
-ruff = "^0.1.5"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
