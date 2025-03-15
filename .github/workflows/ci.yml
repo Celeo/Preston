@@ -15,4 +15,8 @@ jobs:
       - run: uv python install 3.12
       - run: uv run ruff check .
       - run: uv run pytest --cov=preston --cov-report=xml
-      - run: bash <(curl -s https://codecov.io/bash)
+      - uses: codecov/codecov-action@v5
+        with:
+            files: coverage.xml
+        env:
+          ${{ secrets.CODECOV_TOKEN }}
