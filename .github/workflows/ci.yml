@@ -17,6 +17,6 @@ jobs:
       - run: uv run pytest --cov=preston --cov-report=xml
       - uses: codecov/codecov-action@v5
         with:
-            files: coverage.xml
+          files: coverage.xml
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
