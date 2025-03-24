@@ -59,6 +59,7 @@ class Preston:
         self.session.headers.update(
             {"User-Agent": kwargs.get("user_agent", ""), "Accept": "application/json"}
         )
+        self.timeout = kwargs.get("timeout", None)
         self.client_id = kwargs.get("client_id")
         self.client_secret = kwargs.get("client_secret")
         self.callback_url = kwargs.get("callback_url")
@@ -101,7 +102,7 @@ class Preston:
         """
         headers = self._get_authorization_headers()
         data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
-        r = self.session.post(self.TOKEN_URL, headers=headers, data=data)
+        r = self.session.post(self.TOKEN_URL, headers=headers, data=data, timeout=self.timeout)
         response_data = r.json()
         return (response_data["access_token"], response_data["expires_in"])
 
@@ -196,7 +197,7 @@ class Preston:
         """
         headers = self._get_authorization_headers()
         data = {"grant_type": "authorization_code", "code": code}
-        r = self.session.post(self.TOKEN_URL, headers=headers, data=data)
+        r = self.session.post(self.TOKEN_URL, headers=headers, data=data, timeout=self.timeout)
         if not r.status_code == 200:
             raise Exception(
                 f"Could not authenticate, got response code {r.status_code}"
@@ -278,7 +279,7 @@ class Preston:
         if not self.access_token:
             return {}
         self._try_refresh_access_token()
-        return self.session.get(self.WHOAMI_URL).json()
+        return self.session.get(self.WHOAMI_URL, timeout=self.timeout).json()
 
     def get_path(self, path: str, data: dict) -> Tuple[dict, dict]:
         """Queries the ESI by an endpoint URL.
@@ -306,7 +307,7 @@ class Preston:
         if cached_data:
             return cached_data
         self._try_refresh_access_token()
-        resp = self.session.get(target_url)
+        resp = self.session.get(target_url, timeout=self.timeout)
         self.cache.set(resp)
         self.stored_headers.insert(0, resp.headers)
         if resp.text:
@@ -359,7 +360,7 @@ class Preston:
             target_url = req.url
 
         self._try_refresh_access_token()
-        resp = self.session.post(target_url, json=post_data)
+        resp = self.session.post(target_url, json=post_data, timeout=self.timeout)
         if resp.text:
             return resp.json()
         return None
@@ -401,7 +402,7 @@ class Preston:
             target_url = req.url
 
         self._try_refresh_access_token()
-        resp = self.session.delete(target_url)
+        resp = self.session.delete(target_url, timeout=self.timeout)
         if resp.text:
             return resp.json()
         return None
