@@ -1,6 +1,8 @@
 import base64
 import re
 import time
+from http import HTTPStatus
+from json import JSONDecodeError
 from typing import Optional, Tuple, Any, Union
 
 import requests
@@ -59,7 +61,8 @@ class Preston:
         self.session.headers.update(
             {"User-Agent": kwargs.get("user_agent", ""), "Accept": "application/json"}
         )
-        self.timeout = kwargs.get("timeout", None)
+        self.timeout = kwargs.get("timeout", 6)
+        self.retries = kwargs.get("retries", 4)
         self.client_id = kwargs.get("client_id")
         self.client_secret = kwargs.get("client_secret")
         self.callback_url = kwargs.get("callback_url")
@@ -71,6 +74,65 @@ class Preston:
         self._kwargs = kwargs
         if not kwargs.get("no_update_token", False):
             self._try_refresh_access_token()
+
+    def _retry_request(self, requests_function: callable, target_url: str, return_metadata=False, **kwargs
+                       ) -> dict | tuple[dict, dict, str] | Any:
+        """
+
+        Tries some request with exponential backoff on server-side failures.
+        And immediately raises client-side failures.
+        This automatically adds a timeout to the request as well.
+
+        Args:
+            requests_function: Function to call to make the request
+            target_url:        Target URL for request
+            return_metadata:   Whether to return raw response or json. In this case no retries on JSONDecodeError
+            **kwargs:          Additional keyword arguments for function
+        Returns:
+            new response
+        Raises:
+            requests.exceptions.HTTPError (for client-side errors)
+            requests.exceptions.ConnectionError (for connection errors)
+        """
+
+        for x in range(self.retries):
+            try:
+                resp = requests_function(target_url, **kwargs, timeout=self.timeout)
+                resp.raise_for_status()
+                if return_metadata:
+                    return resp.json(), resp.headers, resp.url
+                return resp.json()
+
+            except TimeoutError:
+                pass  # Just try again
+
+            except JSONDecodeError:
+                pass  # Message was not completed Just try again
+
+            except requests.exceptions.HTTPError as exc:
+                code = exc.response.status_code
+                if code in [
+                    HTTPStatus.TOO_MANY_REQUESTS,
+                    420  # Enhance your calm, ESI Error limit
+                ]:
+                    time.sleep(int(exc.response.headers.get("X-Esi-Error-Limit-Reset", 0)))
+                elif code not in [
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    HTTPStatus.BAD_GATEWAY,
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    HTTPStatus.GATEWAY_TIMEOUT,
+                ]:
+                    raise
+            except requests.exceptions.ReadTimeout:
+                pass  # Timeout triggered, just try again
+
+            except requests.exceptions.ConnectionError:
+                raise  # No internet, raise immediately without retry
+
+            # Exponential Backoff
+            time.sleep(2 ** x)
+
+        raise requests.exceptions.ConnectionError("ESI could not complete the request.")
 
     def copy(self) -> "Preston":
         """Creates a copy of this Preston object.
@@ -102,9 +164,8 @@ class Preston:
         """
         headers = self._get_authorization_headers()
         data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
-        r = self.session.post(self.TOKEN_URL, headers=headers, data=data, timeout=self.timeout)
-        response_data = r.json()
-        return (response_data["access_token"], response_data["expires_in"])
+        response_data = self._retry_request(self.session.post, self.TOKEN_URL, headers=headers, data=data)
+        return response_data["access_token"], response_data["expires_in"]
 
     def _get_authorization_headers(self) -> dict:
         """Constructs and returns the Authorization header for the client app.
@@ -197,13 +258,8 @@ class Preston:
         """
         headers = self._get_authorization_headers()
         data = {"grant_type": "authorization_code", "code": code}
-        r = self.session.post(self.TOKEN_URL, headers=headers, data=data, timeout=self.timeout)
-        if not r.status_code == 200:
-            raise Exception(
-                f"Could not authenticate, got response code {r.status_code}"
-            )
+        response_data = self._retry_request(self.session.post, self.TOKEN_URL, headers=headers, data=data)
         new_kwargs = dict(self._kwargs)
-        response_data = r.json()
         new_kwargs["access_token"] = response_data["access_token"]
         new_kwargs["access_expiration"] = time.time() + float(
             response_data["expires_in"]
@@ -224,7 +280,7 @@ class Preston:
         """
         if self.spec:
             return self.spec
-        self.spec = requests.get(self.SPEC_URL.format(self.version)).json()
+        self.spec = self._retry_request(requests.get, self.SPEC_URL.format(self.version))
         return self.spec
 
     def _get_path_for_op_id(self, id: str) -> Optional[str]:
@@ -279,9 +335,9 @@ class Preston:
         if not self.access_token:
             return {}
         self._try_refresh_access_token()
-        return self.session.get(self.WHOAMI_URL, timeout=self.timeout).json()
+        return self._retry_request(self.session.get, self.WHOAMI_URL)
 
-    def get_path(self, path: str, data: dict) -> Tuple[dict, dict]:
+    def get_path(self, path: str, data: dict) -> dict:
         """Queries the ESI by an endpoint URL.
 
         This method is not marked "private" as it _can_ be used
@@ -307,12 +363,12 @@ class Preston:
         if cached_data:
             return cached_data
         self._try_refresh_access_token()
-        resp = self.session.get(target_url, timeout=self.timeout)
-        self.cache.set(resp)
-        self.stored_headers.insert(0, resp.headers)
-        if resp.text:
-            return resp.json()
-        return None
+
+        data, headers, url = self._retry_request(self.session.get, target_url, return_metadata=True)
+        self.cache.set(data, headers, url)
+        self.stored_headers.insert(0, headers)
+        return data
+
 
     def get_op(self, id: str, **kwargs: str) -> dict:
         """Queries the ESI by looking up an operation id.
@@ -360,10 +416,7 @@ class Preston:
             target_url = req.url
 
         self._try_refresh_access_token()
-        resp = self.session.post(target_url, json=post_data, timeout=self.timeout)
-        if resp.text:
-            return resp.json()
-        return None
+        return self._retry_request(self.session.post, target_url, json=post_data)
 
     def post_op(self, id: str, path_data: Union[dict, None], post_data: Any) -> dict:
         """Modifies the ESI by looking up an operation id.
@@ -402,10 +455,7 @@ class Preston:
             target_url = req.url
 
         self._try_refresh_access_token()
-        resp = self.session.delete(target_url, timeout=self.timeout)
-        if resp.text:
-            return resp.json()
-        return None
+        return self._retry_request(self.session.delete, target_url)
 
     def delete_op(self, id: str, path_data: Union[dict, None]) -> dict:
         """Deletes a resource in the ESI by looking up an operation id.
