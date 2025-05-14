@@ -292,37 +292,6 @@ class Preston:
 
         return Preston(**new_kwargs)
 
-    def _authenticate_from_legacy_token(self, legacy_refresh_token: str) -> "Preston":
-        """Upgrades a legacy (v1) refresh token to a v2 refresh token.
-
-        This can be run once per legacy token. The new refresh token must be stored.
-
-        Args:
-            legacy_refresh_token: The old (v1) refresh token string.
-
-        Returns:
-            new Preston, authenticated
-        """
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            **self._get_authorization_headers()
-        }
-
-        data = {
-            "grant_type": "refresh_token",
-            "refresh_token": legacy_refresh_token,
-            "client_id": self.client_id
-        }
-
-        response_data = self._retry_request(self.session.post, self.TOKEN_URL, headers=headers, data=data)
-
-        new_kwargs = dict(self._kwargs)
-        new_kwargs["access_token"] = response_data["access_token"]
-        new_kwargs["access_expiration"] = time.time() + float(
-            response_data["expires_in"]
-        )
-        new_kwargs["refresh_token"] = response_data["refresh_token"]
-        return Preston(**new_kwargs)
 
     def authenticate_from_token(self, refresh_token) -> "Preston":
         """Authenticates usign a stored refresh token.
@@ -340,10 +309,7 @@ class Preston:
             new Preston, authenticated
         """
         if len(refresh_token) != 24:
-            if self.refresh_token_callback is not None:
-                return self._authenticate_from_legacy_token(refresh_token)
-            else:
-                raise Exception("Will not do one time upgrade from legacy token without a way to store it!")
+            raise Exception("You have passed in a legacy token, these are no longer supported by CCP!")
 
         new_kwargs = dict(self._kwargs)
         new_kwargs["refresh_token"] = refresh_token
