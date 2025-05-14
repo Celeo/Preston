@@ -3,8 +3,9 @@ import re
 import time
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Optional, Tuple, Any, Union
+from typing import Optional, Any, Union
 
+import jwt
 import requests
 
 from .cache import Cache
@@ -45,10 +46,11 @@ class Preston:
 
     BASE_URL = "https://esi.evetech.net"
     SPEC_URL = BASE_URL + "/_{}/swagger.json"
-    OAUTH_URL = "https://login.eveonline.com/oauth/"
-    TOKEN_URL = OAUTH_URL + "token"
-    AUTHORIZE_URL = OAUTH_URL + "authorize"
-    WHOAMI_URL = OAUTH_URL + "verify"
+    ISSUER = "https://login.eveonline.com"
+    OAUTH_URL = ISSUER + "/v2/oauth"
+    JWKS_URL = ISSUER + "/oauth/jwks"
+    TOKEN_URL = OAUTH_URL + "/token"
+    AUTHORIZE_URL = OAUTH_URL + "/authorize"
     METHODS = ["get", "post", "put", "delete"]
     OPERATION_ID_KEY = "operationId"
     VAR_REPLACE_REGEX = r"{(\w+)}"
@@ -151,22 +153,6 @@ class Preston:
         """
         return Preston(**self._kwargs)
 
-    def _get_access_from_refresh(self) -> Tuple[str, float]:
-        """Uses the stored refresh token to get a new access token.
-
-        This method assumes that the refresh token exists.
-
-        Args:
-            None
-
-        Returns:
-            new access token and expiration time (from now)
-        """
-        headers = self._get_authorization_headers()
-        data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
-        response_data = self._retry_request(self.session.post, self.TOKEN_URL, headers=headers, data=data)
-        return response_data["access_token"], response_data["expires_in"]
-
     def _get_authorization_headers(self) -> dict:
         """Constructs and returns the Authorization header for the client app.
 
@@ -201,12 +187,26 @@ class Preston:
         """
         if self.refresh_token:
             if not self.access_token or self._is_access_token_expired():
-                (
-                    self.access_token,
-                    self.access_expiration,
-                ) = self._get_access_from_refresh()
-                self.access_expiration = time.time() + self.access_expiration
+                headers = {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                }
 
+                data = {
+                    "grant_type": "refresh_token",
+                    "refresh_token": self.refresh_token,
+                    "client_id": self.client_id,
+                }
+
+                response_data = self._retry_request(
+                    self.session.post,
+                    self.TOKEN_URL,
+                    headers=headers,
+                    data=data,
+                )
+
+                self.access_token = response_data["access_token"]
+                self.access_expiration = time.time() + response_data["expires_in"]
+                self.refresh_token = response_data.get("refresh_token", self.refresh_token)
         if self.access_token:
             self.session.headers.update(
                 {"Authorization": f"Bearer {self.access_token}"}
@@ -223,7 +223,7 @@ class Preston:
         """
         return time.time() > self.access_expiration
 
-    def get_authorize_url(self) -> str:
+    def get_authorize_url(self, state: str = "default") -> str:
         """Constructs and returns the authorization URL.
 
         This is the URL that a user will have to navigate to in their browser
@@ -231,14 +231,14 @@ class Preston:
         will be redirected to your app's callback URL.
 
         Args:
-            None
+            state: state of the application
 
         Returns:
             URL
         """
         return (
             f"{self.AUTHORIZE_URL}?response_type=code&redirect_uri={self.callback_url}"
-            f"&client_id={self.client_id}&scope={self.scope.replace(' ', '%20')}"
+            f"&client_id={self.client_id}&scope={self.scope.replace(' ', '%20')}&state={state}"
         )
 
     def authenticate(self, code: str) -> "Preston":
@@ -256,8 +256,17 @@ class Preston:
         Returns:
             new Preston, authenticated
         """
-        headers = self._get_authorization_headers()
-        data = {"grant_type": "authorization_code", "code": code}
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+
+        data = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": self.callback_url,
+            "client_id": self.client_id,
+        }
+
         response_data = self._retry_request(self.session.post, self.TOKEN_URL, headers=headers, data=data)
         new_kwargs = dict(self._kwargs)
         new_kwargs["access_token"] = response_data["access_token"]
@@ -283,11 +292,11 @@ class Preston:
         self.spec = self._retry_request(requests.get, self.SPEC_URL.format(self.version))
         return self.spec
 
-    def _get_path_for_op_id(self, id: str) -> Optional[str]:
+    def _get_path_for_op_id(self, op_id: str) -> Optional[str]:
         """Searches the spec for a path matching the operation id.
 
         Args:
-            id: operation id
+            op_id: operation id
 
         Returns:
             path to the endpoint, or `None` if not found
@@ -296,7 +305,7 @@ class Preston:
             for method in self.METHODS:
                 if method in path_value:
                     if self.OPERATION_ID_KEY in path_value[method]:
-                        if path_value[method][self.OPERATION_ID_KEY] == id:
+                        if path_value[method][self.OPERATION_ID_KEY] == op_id:
                             return path_key
         return None
 
@@ -332,10 +341,52 @@ class Preston:
         Returns:
             character info if authenticated, otherwise an empty dict
         """
+
         if not self.access_token:
             return {}
+
         self._try_refresh_access_token()
-        return self._retry_request(self.session.get, self.WHOAMI_URL)
+
+        try:
+            # Get the JWT header to determine the key ID (kid)
+            unverified_header = jwt.get_unverified_header(self.access_token)
+
+            # Fetch the public keys (JWKS)
+            jwks_response = requests.get(self.JWKS_URL)
+            jwks = jwks_response.json()
+
+            # Find the public key with matching kid
+            key = next(
+                (k for k in jwks["keys"] if k["kid"] == unverified_header["kid"]),
+                None
+            )
+            if not key:
+                raise Exception("Unable to find appropriate public key for JWT.")
+
+            # Convert JWKS to RSA public key
+            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
+
+            # Decode and validate JWT
+            payload = jwt.decode(
+                self.access_token,
+                public_key,
+                algorithms=["RS256"],
+                audience=self.client_id,
+                issuer=self.ISSUER,
+                leeway=10  # allow 10 seconds of clock skew
+            )
+
+            return {
+                "character_id": payload.get("sub").split(":")[-1],
+                "character_name": payload.get("name"),
+                "scopes": payload.get("scp", []),
+                "owner_hash": payload.get("owner"),
+                "token_type": payload.get("token_type", "Character"),
+            }
+
+        except Exception as e:
+            print(f"[whoami] Failed to decode/verify JWT: {e}")
+            return {}
 
     def get_path(self, path: str, data: dict) -> dict:
         """Queries the ESI by an endpoint URL.
