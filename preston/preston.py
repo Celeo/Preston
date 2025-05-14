@@ -404,6 +404,25 @@ class Preston:
             replace_with = str(data.pop(match.group(1), ""))
             path = path.replace(replace_from, replace_with)
 
+    def _build_url(self, path: str, data: dict) -> str:
+        """Build a complete URL.
+
+        Args:
+            path: raw ESI URL path
+            data: data to insert into the URL
+
+        Returns:
+            url
+        """
+        path, inserts = self._insert_vars(path, data)
+        target_url = self.BASE_URL + path
+        if len(inserts) > 0:
+            req = requests.models.PreparedRequest()
+            req.prepare_url(target_url, inserts)
+            return req.url
+
+        return target_url
+
     def whoami(self) -> dict:
         """Returns the basic information about the authenticated character.
 
@@ -477,13 +496,7 @@ class Preston:
         Returns:
             ESI data
         """
-        var_insert = self._insert_vars(path, data)
-        path = var_insert[0]
-        target_url = self.BASE_URL + path
-        if len(var_insert[1]) > 0:
-            req = requests.models.PreparedRequest()
-            req.prepare_url(target_url, var_insert[1])
-            target_url = req.url
+        target_url = self._build_url(path, data)
 
         cached_data = self.cache.check(target_url)
         if cached_data:
@@ -532,14 +545,7 @@ class Preston:
         Returns:
             ESI data
         """
-        var_insert = self._insert_vars(path, path_data)
-        path = var_insert[0]
-        target_url = self.BASE_URL + path
-        if len(var_insert[1]) > 0:
-            req = requests.models.PreparedRequest()
-            req.prepare_url(target_url, var_insert[1])
-            target_url = req.url
-
+        target_url = self._build_url(path, path_data)
         self._try_refresh_access_token()
         return self._retry_request(self.session.post, target_url, json=post_data)
 
@@ -571,14 +577,7 @@ class Preston:
         Returns:
             ESI response data
         """
-        var_insert = self._insert_vars(path, path_data)
-        path = var_insert[0]
-        target_url = self.BASE_URL + path
-        if len(var_insert[1]) > 0:
-            req = requests.models.PreparedRequest()
-            req.prepare_url(target_url, var_insert[1])
-            target_url = req.url
-
+        target_url = self._build_url(path, path_data)
         self._try_refresh_access_token()
         return self._retry_request(self.session.delete, target_url)
 
