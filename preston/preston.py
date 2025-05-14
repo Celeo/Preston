@@ -72,6 +72,7 @@ class Preston:
         self.access_token = kwargs.get("access_token")
         self.access_expiration = kwargs.get("access_expiration")
         self.refresh_token = kwargs.get("refresh_token")
+        self.refresh_token_callback = kwargs.get("refresh_token_callback")
         self.stored_headers = []
         self._kwargs = kwargs
         if not kwargs.get("no_update_token", False):
@@ -207,6 +208,7 @@ class Preston:
                 self.access_token = response_data["access_token"]
                 self.access_expiration = time.time() + response_data["expires_in"]
                 self.refresh_token = response_data.get("refresh_token", self.refresh_token)
+                self.refresh_token_callback(self)
         if self.access_token:
             self.session.headers.update(
                 {"Authorization": f"Bearer {self.access_token}"}
