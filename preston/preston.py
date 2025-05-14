@@ -495,8 +495,7 @@ class Preston:
         self.stored_headers.insert(0, headers)
         return data
 
-
-    def get_op(self, id: str, **kwargs: str) -> dict:
+    def get_op(self, op_id: str, **kwargs: str) -> dict:
         """Queries the ESI by looking up an operation id.
 
         Endpoints are cached, so calls to this method for the
@@ -507,17 +506,17 @@ class Preston:
         and then unused items will be used as query params.
 
         Args:
-            id: operation id
+            op_id: operation id
             kwargs: data to populate the endpoint's URL variables
 
         Returns:
             ESI data
         """
-        path = self._get_path_for_op_id(id)
+        path = self._get_path_for_op_id(op_id)
         return self.get_path(path, kwargs)
 
     def post_path(
-        self, path: str, path_data: Union[dict, None], post_data: Any
+            self, path: str, path_data: Union[dict, None], post_data: Any
     ) -> dict:
         """Modifies the ESI by an endpoint URL.
 
@@ -544,18 +543,18 @@ class Preston:
         self._try_refresh_access_token()
         return self._retry_request(self.session.post, target_url, json=post_data)
 
-    def post_op(self, id: str, path_data: Union[dict, None], post_data: Any) -> dict:
+    def post_op(self, op_id: str, path_data: Union[dict, None], post_data: Any) -> dict:
         """Modifies the ESI by looking up an operation id.
 
         Args:
-            path: raw ESI URL path
+            op_id: operation id
             path_data: data to format the path with (can be None)
             post_data: data to send to ESI
 
         Returns:
             ESI data
         """
-        path = self._get_path_for_op_id(id)
+        path = self._get_path_for_op_id(op_id)
         return self.post_path(path, path_data, post_data)
 
     def delete_path(self, path: str, path_data: Union[dict, None]) -> dict:
@@ -583,15 +582,15 @@ class Preston:
         self._try_refresh_access_token()
         return self._retry_request(self.session.delete, target_url)
 
-    def delete_op(self, id: str, path_data: Union[dict, None]) -> dict:
+    def delete_op(self, op_id: str, path_data: Union[dict, None]) -> dict:
         """Deletes a resource in the ESI by looking up an operation id.
 
         Args:
-            id: operation id
+            op_id: operation id
             path_data: data to format the path with (can be None)
 
         Returns:
             ESI response data
         """
-        path = self._get_path_for_op_id(id)
+        path = self._get_path_for_op_id(op_id)
         return self.delete_path(path, path_data)
