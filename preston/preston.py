@@ -324,7 +324,7 @@ class Preston:
         new_kwargs["refresh_token"] = response_data["refresh_token"]
         return Preston(**new_kwargs)
 
-    def authenticate_from_refresh(self, refresh_token) -> "Preston":
+    def authenticate_from_token(self, refresh_token) -> "Preston":
         """Authenticates usign a stored refresh token.
 
         A new Preston object is returned; this object is not modified.
