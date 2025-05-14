@@ -68,7 +68,16 @@ class Preston:
         self.client_id = kwargs.get("client_id")
         self.client_secret = kwargs.get("client_secret")
         self.callback_url = kwargs.get("callback_url")
-        self.scope = kwargs.get("scope", "")
+
+        # Allow scopes to be directly pasted from developers.eveonline.com no matter if it is one or multiple
+        scope = kwargs.get("scope", "")
+        if type(scope) == str:
+            self.scope = scope
+        elif type(scope) == list:
+            self.scope = " ".join(scope)
+        else:
+            raise TypeError("scope must be a string or list!")
+
         self.access_token = kwargs.get("access_token")
         self.access_expiration = kwargs.get("access_expiration")
         self.refresh_token = kwargs.get("refresh_token")
