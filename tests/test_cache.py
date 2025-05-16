@@ -68,12 +68,12 @@ def test_add_verify_page(cache):
 
     cache.data.clear()
     r = Response("")
-    cache.set(r)
+    cache.set(r.data, r.headers, r.url)
     assert len(cache) == 1
     assert cache.check("") == {}
 
     r = Response(Preston.BASE_URL + "/test", {"foo": "bar"})
-    cache.set(r)
+    cache.set(r.data, r.headers, r.url)
     assert len(cache) == 2
     assert cache.check(Preston.BASE_URL + "/test") == {"foo": "bar"}
 
@@ -86,7 +86,7 @@ def test_add_verify_page(cache):
             )
         },
     )
-    cache.set(r)
+    cache.set(r.data, r.headers, r.url)
     assert len(cache) == 3
     sleep(1)
     assert not cache.check(Preston.BASE_URL + "/test2")
