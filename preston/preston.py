@@ -71,9 +71,9 @@ class Preston:
 
         # Allow scopes to be directly pasted from developers.eveonline.com no matter if it is one or multiple
         scope = kwargs.get("scope", "")
-        if type(scope) == str:
+        if isinstance(scope, str):
             self.scope = scope
-        elif type(scope) == list:
+        elif isinstance(scope, list):
             self.scope = " ".join(scope)
         else:
             raise TypeError("scope must be a string or list!")
