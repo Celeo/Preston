@@ -217,7 +217,8 @@ class Preston:
                 self.access_token = response_data["access_token"]
                 self.access_expiration = time.time() + response_data["expires_in"]
                 self.refresh_token = response_data.get("refresh_token", self.refresh_token)
-                self.refresh_token_callback(self)
+                if self.refresh_token_callback is not None:
+                    self.refresh_token_callback(self)
         if self.access_token:
             self.session.headers.update(
                 {"Authorization": f"Bearer {self.access_token}"}
