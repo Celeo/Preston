@@ -21,6 +21,8 @@ classifiers = [
 ]
 requires-python = "<4.0,>=3.8"
 dependencies = [
+    "cryptography>=44.0.3",
+    "pyjwt>=2.9.0",
     "requests==2.32.3",
 ]
 

@@ -79,12 +79,12 @@ def test_is_access_token_expired(empty):
 
 
 def test_get_authorize_url(sample):
-    expected = "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=4&client_id=2&scope=5"
-    assert sample.get_authorize_url() == expected
+    expected = "https://login.eveonline.com/v2/oauth/authorize?response_type=code&redirect_uri=4&client_id=2&scope=5&state=some_state"
+    assert sample.get_authorize_url("some_state") == expected
     sample_multiple_scopes = sample
     sample_multiple_scopes.scope = 'scope scope1'
-    expected_multiple_scope = "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=4&client_id=2&scope=scope%20scope1"
-    assert sample_multiple_scopes.get_authorize_url() == expected_multiple_scope
+    expected_multiple_scope = "https://login.eveonline.com/v2/oauth/authorize?response_type=code&redirect_uri=4&client_id=2&scope=scope%20scope1&state=other_state"
+    assert sample_multiple_scopes.get_authorize_url("other_state") == expected_multiple_scope
 
 
 def test_insert_vars(empty):
@@ -122,6 +122,11 @@ def test_try_refresh_access_token_has(empty):
     empty.access_token = None
     empty._is_access_token_expired = lambda: False
     empty.access_expiration = 1.0
-    empty._get_access_from_refresh = lambda: ('def', 456)
+    empty.refresh_token_callback = lambda *args: None
+    empty._retry_request = lambda *args, **kwargs: {
+        "access_token": "def",
+        "expires_in": 1,
+        "refresh_token": "qwe"
+    }
     empty._try_refresh_access_token()
     assert empty.access_token == 'def'

@@ -3,8 +3,6 @@ import math
 import time
 from typing import Optional
 
-from requests import Response
-
 
 class Cache:
     def __init__(self):
@@ -37,17 +35,19 @@ class Cache:
         delta = (expiration - datetime.now(UTC)).total_seconds()
         return math.ceil(abs(delta))
 
-    def set(self, response: Response) -> None:
+    def set(self, data: dict, headers: dict, url: str) -> None:
         """Adds a response to the cache.
 
         Args:
-            response: response from ESI
+            data: response from ESI
+            headers: headers from ESI
+            url: url for the request
 
         Returns:
             None
         """
-        self.data[response.url] = SavedEndpoint(
-            response.json(), self._get_expiration(response.headers)
+        self.data[url] = SavedEndpoint(
+            data, self._get_expiration(headers)
         )
 
     def _check_expiration(self, url: str, data: "SavedEndpoint") -> "SavedEndpoint":
