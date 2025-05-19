@@ -87,8 +87,13 @@ class Preston:
         if not kwargs.get("no_update_token", False):
             self._try_refresh_access_token()
 
-    def _retry_request(self, requests_function: callable, target_url: str, return_metadata=False, **kwargs
-                       ) -> dict | tuple[dict, dict, str] | Any:
+    def _retry_request(
+        self,
+        requests_function: callable,
+        target_url: str,
+        return_metadata=False,
+        **kwargs,
+    ) -> dict | tuple[dict, dict, str] | Any:
         """
 
         Tries some request with exponential backoff on server-side failures.
@@ -125,9 +130,11 @@ class Preston:
                 code = exc.response.status_code
                 if code in [
                     HTTPStatus.TOO_MANY_REQUESTS,
-                    420  # Enhance your calm, ESI Error limit
+                    420,  # Enhance your calm, ESI Error limit
                 ]:
-                    time.sleep(int(exc.response.headers.get("X-Esi-Error-Limit-Reset", 0)))
+                    time.sleep(
+                        int(exc.response.headers.get("X-Esi-Error-Limit-Reset", 0))
+                    )
                 elif code not in [
                     HTTPStatus.INTERNAL_SERVER_ERROR,
                     HTTPStatus.BAD_GATEWAY,
@@ -142,7 +149,7 @@ class Preston:
                 raise  # No internet, raise immediately without retry
 
             # Exponential Backoff
-            time.sleep(2 ** x)
+            time.sleep(2**x)
 
         raise requests.exceptions.ConnectionError("ESI could not complete the request.")
 
@@ -216,7 +223,9 @@ class Preston:
 
                 self.access_token = response_data["access_token"]
                 self.access_expiration = time.time() + response_data["expires_in"]
-                self.refresh_token = response_data.get("refresh_token", self.refresh_token)
+                self.refresh_token = response_data.get(
+                    "refresh_token", self.refresh_token
+                )
                 if self.refresh_token_callback is not None:
                     self.refresh_token_callback(self)
         if self.access_token:
@@ -288,11 +297,12 @@ class Preston:
 
         new_kwargs = dict(self._kwargs)
         new_kwargs["access_token"] = response_data["access_token"]
-        new_kwargs["access_expiration"] = time.time() + float(response_data["expires_in"])
+        new_kwargs["access_expiration"] = time.time() + float(
+            response_data["expires_in"]
+        )
         new_kwargs["refresh_token"] = response_data["refresh_token"]
 
         return Preston(**new_kwargs)
-
 
     def authenticate_from_token(self, refresh_token) -> "Preston":
         """Authenticates usign a stored refresh token.
@@ -310,13 +320,14 @@ class Preston:
             new Preston, authenticated
         """
         if len(refresh_token) != 24:
-            raise Exception("You have passed in a legacy token, these are no longer supported by CCP!")
+            raise Exception(
+                "You have passed in a legacy token, these are no longer supported by CCP!"
+            )
 
         new_kwargs = dict(self._kwargs)
         new_kwargs["refresh_token"] = refresh_token
         new_kwargs["access_token"] = None
         return Preston(**new_kwargs)
-
 
     def _get_spec(self) -> dict:
         """Fetches the OpenAPI spec from the server.
@@ -331,7 +342,9 @@ class Preston:
         """
         if self.spec:
             return self.spec
-        self.spec = self._retry_request(requests.get, self.SPEC_URL.format(self.version))
+        self.spec = self._retry_request(
+            requests.get, self.SPEC_URL.format(self.version)
+        )
         return self.spec
 
     def _get_path_for_op_id(self, op_id: str) -> Optional[str]:
@@ -418,8 +431,7 @@ class Preston:
 
             # Find the public key with matching kid
             key = next(
-                (k for k in jwks["keys"] if k["kid"] == unverified_header["kid"]),
-                None
+                (k for k in jwks["keys"] if k["kid"] == unverified_header["kid"]), None
             )
             if not key:
                 raise Exception("Unable to find appropriate public key for JWT.")
@@ -434,7 +446,7 @@ class Preston:
                 algorithms=["RS256"],
                 audience=self.client_id,
                 issuer=self.ISSUER,
-                leeway=10  # allow 10 seconds of clock skew
+                leeway=10,  # allow 10 seconds of clock skew
             )
 
             return {
@@ -470,7 +482,9 @@ class Preston:
             return cached_data
         self._try_refresh_access_token()
 
-        data, headers, url = self._retry_request(self.session.get, target_url, return_metadata=True)
+        data, headers, url = self._retry_request(
+            self.session.get, target_url, return_metadata=True
+        )
         self.cache.set(data, headers, url)
         self.stored_headers.insert(0, headers)
         return data
@@ -496,7 +510,7 @@ class Preston:
         return self.get_path(path, kwargs)
 
     def post_path(
-            self, path: str, path_data: Union[dict, None], post_data: Any
+        self, path: str, path_data: Union[dict, None], post_data: Any
     ) -> dict:
         """Modifies the ESI by an endpoint URL.
 

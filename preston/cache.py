@@ -31,7 +31,9 @@ class Cache:
         expiration_str = headers.get("expires")
         if not expiration_str:
             return 0
-        expiration = datetime.strptime(expiration_str, "%a, %d %b %Y %H:%M:%S %Z").replace(tzinfo=UTC)
+        expiration = datetime.strptime(
+            expiration_str, "%a, %d %b %Y %H:%M:%S %Z"
+        ).replace(tzinfo=UTC)
         delta = (expiration - datetime.now(UTC)).total_seconds()
         return math.ceil(abs(delta))
 
@@ -46,9 +48,7 @@ class Cache:
         Returns:
             None
         """
-        self.data[url] = SavedEndpoint(
-            data, self._get_expiration(headers)
-        )
+        self.data[url] = SavedEndpoint(data, self._get_expiration(headers))
 
     def _check_expiration(self, url: str, data: "SavedEndpoint") -> "SavedEndpoint":
         """Checks the expiration time for data for a url.

@@ -1,6 +1,6 @@
 # Preston
 
-[![CI](https://github.com/Celeo/preston/workflows/CI/badge.svg?branch=master)](https://github.com/Celeo/preston/actions?query=workflow%3ACI)
+[![CI](https://github.com/Celeo/Preston/actions/workflows/ci.yml/badge.svg)](https://github.com/Celeo/Preston/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Celeo/preston/branch/master/graph/badge.svg?token=2R9RY3P229)](https://codecov.io/gh/Celeo/preston)
 [![Python version](https://img.shields.io/badge/Python-3.8+-blue)](https://www.python.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
