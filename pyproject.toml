@@ -5,7 +5,7 @@ description = "EVE ESI API access tool"
 authors = [
     { name = "Celeo", email = "mattboulanger@fastmail.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 keywords = [
     "eve online",
