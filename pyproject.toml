@@ -1,6 +1,6 @@
 [project]
 name = "preston"
-version = "4.11.0"
+version = "4.12.0"
 description = "EVE ESI API access tool"
 authors = [
     { name = "Celeo", email = "mattboulanger@fastmail.com" }
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Libraries",
 ]
-requires-python = "<4.0,>=3.8"
+requires-python = "<4.0,>=3.11"
 dependencies = [
     "cryptography>=44.0.3",
     "pyjwt>=2.9.0",
