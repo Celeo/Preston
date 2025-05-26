@@ -118,7 +118,9 @@ class Preston:
                 resp.raise_for_status()
                 if return_metadata:
                     return resp.json(), resp.headers, resp.url
-                return resp.json()
+                if resp.text:
+                    return resp.json()
+                return None
 
             except TimeoutError:
                 pass  # Just try again
