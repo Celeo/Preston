@@ -32,7 +32,7 @@ repository = "https://github.com/Celeo/Preston"
 
 [dependency-groups]
 dev = [
-    "pytest<8.0.0,>=7.4.3",
+    "pytest>=7.4.3,<10.0.0",
     "pytest-cov<5.0.0,>=4.1.0",
     "ruff<1.0.0,>=0.1.5",
 ]
