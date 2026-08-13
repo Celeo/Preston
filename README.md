@@ -54,6 +54,46 @@ You should always include a good `user_agent`.
 
 Additionally, a `post_op` method exists, that takes a dictionary (instead of **kwargs) and another parameter; the former is used like above, to satisfy the URL parameters, and the latter is sent to the ESI endpoint as the payload.
 
+### OpenAPI and compatibility dates
+
+Preston dynamically loads CCP's OpenAPI 3.1 specification from
+`https://esi.evetech.net/meta/openapi.json`; it does not use the retired Swagger
+specification endpoints. The specification is requested with the same ESI
+compatibility date as API calls, so discovered paths and request behavior match.
+
+ESI compatibility dates select API behavior for the whole application. Pass a
+`compatibility_date` in `YYYY-MM-DD` form to pin that behavior:
+
+```python
+from preston import Preston
+
+preston = Preston(
+    user_agent="example@example.com my-eve-app",
+    compatibility_date="2026-08-04",
+)
+
+character = preston.get_op(
+    "get_characters_character_id",
+    character_id=91316135,
+)
+```
+
+If omitted (or set to `"latest"`), Preston resolves the current ESI date once
+when the instance is created. ESI rolls its date at 11:00 UTC, so this is the
+UTC date after subtracting 11 hours. The resolved date is sent as
+`X-Compatibility-Date` on ESI requests and is retained by copied and
+authenticated Preston instances. Pin a date for predictable production
+behavior; a new default instance follows the current ESI behavior.
+
+Both the exact OpenAPI operation IDs from the selected specification (for
+example, `GetCharactersDetail`) and Preston's existing snake_case IDs (for
+example, `get_characters_character_id`) are accepted. Preston also derives a
+legacy ID from each operation's method and path, so the latter remains usable
+when an OpenAPI ID is renamed. The old `version=` argument is retained
+temporarily for source compatibility, but is deprecated, emits a
+`DeprecationWarning` when passed explicitly, and no longer selects routes or a
+specification. Use `compatibility_date=` instead.
+
 For #2, there are 2 methods that you'll need, `get_authorize_url` and `authenticate`, and several `__init__` kwargs.
 
 ```python
