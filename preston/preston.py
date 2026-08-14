@@ -1,6 +1,8 @@
 import base64
 import re
 import time
+import warnings
+from datetime import UTC, date, datetime, timedelta
 from http import HTTPStatus
 from json import JSONDecodeError
 from typing import Optional, Any, Union
@@ -19,7 +21,11 @@ class Preston:
     The __init__ method only **kwargs instead of a specific
     listing of arguments; here's the list of useful key-values:
 
-        version                 version of the spec to load
+        compatibility_date      ESI compatibility date to send with API
+                                requests. Defaults to the current ESI date.
+
+        version                 deprecated legacy Swagger option; it no longer
+                                selects an ESI specification
 
         user_agent              user-agent to use
 
@@ -45,23 +51,38 @@ class Preston:
     """
 
     BASE_URL = "https://esi.evetech.net"
-    SPEC_URL = BASE_URL + "/_{}/swagger.json"
+    SPEC_URL = BASE_URL + "/meta/openapi.json"
     ISSUER = "https://login.eveonline.com"
     OAUTH_URL = ISSUER + "/v2/oauth"
     JWKS_URL = ISSUER + "/oauth/jwks"
     TOKEN_URL = OAUTH_URL + "/token"
     AUTHORIZE_URL = OAUTH_URL + "/authorize"
-    METHODS = ["get", "post", "put", "delete"]
+    METHODS = ("get", "post", "put", "delete")
     OPERATION_ID_KEY = "operationId"
     VAR_REPLACE_REGEX = r"{(\w+)}"
 
     def __init__(self, **kwargs: Any) -> None:
         self.cache = Cache()
         self.spec = None
+        self._operation_index = None
         self.version = kwargs.get("version", "latest")
+        if "version" in kwargs:
+            warnings.warn(
+                "version= is deprecated and no longer selects an ESI specification; "
+                "use compatibility_date= instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        self.compatibility_date = self._resolve_compatibility_date(
+            kwargs.get("compatibility_date")
+        )
         self.session = requests.Session()
         self.session.headers.update(
-            {"User-Agent": kwargs.get("user_agent", ""), "Accept": "application/json"}
+            {
+                "User-Agent": kwargs.get("user_agent", ""),
+                "Accept": "application/json",
+                "X-Compatibility-Date": self.compatibility_date,
+            }
         )
         self.timeout = kwargs.get("timeout", 6)
         self.retries = kwargs.get("retries", 4)
@@ -83,9 +104,33 @@ class Preston:
         self.refresh_token = kwargs.get("refresh_token")
         self.refresh_token_callback = kwargs.get("refresh_token_callback")
         self.stored_headers = []
-        self._kwargs = kwargs
+        self._kwargs = dict(kwargs)
+        self._kwargs["compatibility_date"] = self.compatibility_date
         if not kwargs.get("no_update_token", False):
             self._try_refresh_access_token()
+
+    @staticmethod
+    def _current_compatibility_date(now: Optional[datetime] = None) -> str:
+        """Return ESI's current date, which changes at 11:00 UTC."""
+        return ((now or datetime.now(UTC)) - timedelta(hours=11)).date().isoformat()
+
+    @classmethod
+    def _resolve_compatibility_date(cls, compatibility_date: Optional[str]) -> str:
+        """Return a valid, fixed ESI compatibility date for this instance.
+
+        ESI changes its current date at downtime, 11:00 UTC. A default or
+        ``"latest"`` value therefore resolves to UTC time minus 11 hours.
+        """
+        if compatibility_date is None or compatibility_date == "latest":
+            return cls._current_compatibility_date()
+        if not isinstance(compatibility_date, str):
+            raise TypeError("compatibility_date must be a YYYY-MM-DD string or 'latest'.")
+        try:
+            return date.fromisoformat(compatibility_date).isoformat()
+        except ValueError as exc:
+            raise ValueError(
+                "compatibility_date must use the YYYY-MM-DD format."
+            ) from exc
 
     def _retry_request(
         self,
@@ -112,6 +157,7 @@ class Preston:
             requests.exceptions.ConnectionError (for connection errors)
         """
 
+        last_json_error = None
         for x in range(self.retries):
             try:
                 resp = requests_function(target_url, **kwargs, timeout=self.timeout)
@@ -125,7 +171,8 @@ class Preston:
             except TimeoutError:
                 pass  # Just try again
 
-            except JSONDecodeError:
+            except JSONDecodeError as exc:
+                last_json_error = exc
                 pass  # Message was not completed Just try again
 
             except requests.exceptions.HTTPError as exc:
@@ -153,6 +200,8 @@ class Preston:
             # Exponential Backoff
             time.sleep(2**x)
 
+        if last_json_error:
+            raise ValueError("ESI returned an invalid JSON response.") from last_json_error
         raise requests.exceptions.ConnectionError("ESI could not complete the request.")
 
     def copy(self) -> "Preston":
@@ -342,29 +391,106 @@ class Preston:
         Returns:
             OpenAPI spec data
         """
-        if self.spec:
-            return self.spec
-        self.spec = self._retry_request(
-            requests.get, self.SPEC_URL.format(self.version)
-        )
+        if self.spec is None:
+            self.spec = self._retry_request(
+                self.session.get,
+                self.SPEC_URL,
+                # The OpenAPI document is public; do not expose a character
+                # bearer token when an authenticated Preston loads it.
+                headers={"Authorization": None},
+            )
+
+        if not isinstance(self.spec, dict):
+            raise ValueError("ESI OpenAPI specification must be a JSON object.")
+        paths = self.spec.get("paths")
+        if not isinstance(paths, dict):
+            raise ValueError("ESI OpenAPI specification is missing a paths object.")
+        if self._operation_index is None:
+            self._operation_index = self._build_operation_index(paths)
         return self.spec
 
-    def _get_path_for_op_id(self, op_id: str) -> Optional[str]:
-        """Searches the spec for a path matching the operation id.
+    @staticmethod
+    def _legacy_operation_id(operation_id: str) -> str:
+        """Convert a PascalCase OpenAPI operation id to Preston's legacy form."""
+        return re.sub(
+            r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])",
+            "_",
+            operation_id,
+        ).lower()
+
+    @staticmethod
+    def _legacy_path_operation_id(method: str, path: str) -> str:
+        """Build the Swagger-style operation id historically derived from a path."""
+        path_parts = re.sub(r"[^a-zA-Z0-9]+", "_", path).strip("_")
+        return f"{method}_{path_parts}".lower()
+
+    def _build_operation_index(self, paths: dict) -> dict:
+        """Index OpenAPI operations by native and legacy operation identifiers."""
+        operation_index = {}
+        for path, path_item in paths.items():
+            if not isinstance(path_item, dict):
+                raise ValueError(f"OpenAPI path item {path!r} must be an object.")
+            for method, operation in path_item.items():
+                if method not in self.METHODS:
+                    continue
+                if not isinstance(operation, dict):
+                    raise ValueError(
+                        f"OpenAPI operation {method.upper()} {path} must be an object."
+                    )
+                if self.OPERATION_ID_KEY not in operation:
+                    raise ValueError(
+                        f"OpenAPI operation {method.upper()} {path} is missing an operationId."
+                    )
+                operation_id = operation[self.OPERATION_ID_KEY]
+                if not isinstance(operation_id, str) or not operation_id:
+                    raise ValueError(
+                        f"OpenAPI operation {method.upper()} {path} has an invalid operationId."
+                    )
+
+                operation_details = {
+                    "path": path,
+                    "method": method,
+                    "operation_id": operation_id,
+                }
+                aliases = (
+                    operation_id,
+                    self._legacy_operation_id(operation_id),
+                    self._legacy_path_operation_id(method, path),
+                )
+                for alias in aliases:
+                    existing = operation_index.get(alias)
+                    if existing and existing != operation_details:
+                        raise ValueError(
+                            "OpenAPI operation IDs produce an ambiguous legacy alias "
+                            f"{alias!r}."
+                        )
+                    operation_index[alias] = operation_details
+        return operation_index
+
+    def _get_operation_for_op_id(self, op_id: str) -> dict:
+        """Return operation metadata for an OpenAPI or legacy operation id."""
+        self._get_spec()
+        try:
+            return self._operation_index[op_id]
+        except KeyError as exc:
+            raise ValueError(
+                f"Unknown ESI operation ID {op_id!r}. Use an OpenAPI operationId "
+                "or its legacy snake_case equivalent."
+            ) from exc
+
+    def _get_path_for_op_id(self, op_id: str) -> str:
+        """Find a path by OpenAPI or legacy operation id.
 
         Args:
             op_id: operation id
 
         Returns:
-            path to the endpoint, or `None` if not found
+            path to the endpoint
+
+        Raises:
+            ValueError: if the operation id is not present in the specification
         """
-        for path_key, path_value in self._get_spec()["paths"].items():
-            for method in self.METHODS:
-                if method in path_value:
-                    if self.OPERATION_ID_KEY in path_value[method]:
-                        if path_value[method][self.OPERATION_ID_KEY] == op_id:
-                            return path_key
-        return None
+        return self._get_operation_for_op_id(op_id)["path"]
 
     def _insert_vars(self, path: str, data: dict) -> tuple[str, dict]:
         """Inserts variables into the ESI URL path.
@@ -492,7 +618,7 @@ class Preston:
         return data
 
     def get_op(self, op_id: str, **kwargs: str) -> dict:
-        """Queries the ESI by looking up an operation id.
+        """Queries the ESI by looking up an OpenAPI or legacy operation id.
 
         Endpoints are cached, so calls to this method for the
         same op and args will return the data from the cache
